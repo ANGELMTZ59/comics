@@ -1,34 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FaTrash, FaPlus } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import {
-  FaHome,
-  FaShoppingCart,
-  FaBoxOpen,
-  FaTruck,
-  FaChevronDown,
-  FaChevronUp,
-  FaUserCircle,
-  FaSignOutAlt,
-  FaEnvelope,
-  FaEdit,
-  FaTimes,
-  FaUsers,
-  FaUser,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaClipboardList,
-} from "react-icons/fa";
-import "../styles.css";
+import { FaTrash, FaPlus, FaEdit, FaTimes, FaUser, FaPhone, FaMapMarkerAlt, FaClipboardList, FaEnvelope } from "react-icons/fa";
+import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
+import "../proveedores.css";
 
 const GestionProveedores = () => {
-  const navigate = useNavigate();
   const [proveedores, setProveedores] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
 
   const [nuevoProveedor, setNuevoProveedor] = useState({
     nombre: "",
@@ -37,13 +16,7 @@ const GestionProveedores = () => {
     direccion: "",
   });
 
-  const localEmpleado = {
-    nombre: "Juan Pérez",
-    correo: "juanperez@example.com",
-  };
-
   useEffect(() => {
-    // Datos de prueba para visualizar la tabla
     setProveedores([
       {
         id_proveedor: 1,
@@ -114,182 +87,15 @@ const GestionProveedores = () => {
     });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("usuario");
-    navigate("/login");
-  };
-
-  const toggleSubmenu = (menu) => {
-    setActiveSubmenu(activeSubmenu === menu ? null : menu);
-  };
-
-  const toggleMenuUsuario = () => {
-    setMenuUsuarioVisible(!menuUsuarioVisible);
-  };
-
-  useEffect(() => {
-    fetch("http://localhost:5000/proveedores")
-      .then((res) => res.json())
-      .then((data) => setProveedores(data))
-      .catch((err) => console.error("Error al obtener proveedores:", err));
-  }, []);
-
   const eliminarProveedor = (id) => {
     if (window.confirm("¿Seguro que deseas eliminar este proveedor?")) {
-      fetch(`http://localhost:5000/proveedores/${id}`, {
-        method: "DELETE",
-      })
-        .then(() =>
-          setProveedores(proveedores.filter((p) => p.id_proveedor !== id))
-        )
-        .catch((err) => console.error("Error al eliminar proveedor:", err));
+      setProveedores(proveedores.filter((p) => p.id_proveedor !== id));
     }
   };
+
   return (
     <div className="proveedores-page">
-      <nav className="sidebar">
-        <div className="logo-container">
-          <img
-            src="/images/logo.png"
-            alt="Logo Comics Planet"
-            className="logo"
-          />
-          <h2 className="sidebar-title">Comics Planet</h2>
-        </div>
-        <ul className="sidebar-menu">
-          <li className="menu-item" onClick={() => navigate("/inicioempleado")}>
-            <FaHome className="icon" />{" "}
-            <span className="menu-text">Inicio</span>
-          </li>
-
-          {/* Menú desplegable de Clientes */}
-          <li className="menu-item" onClick={() => toggleSubmenu("clientes")}>
-            <div className="menu-button">
-              <FaShoppingCart className="icon" />{" "}
-              <span className="menu-text">Clientes</span>
-              {activeSubmenu === "clientes" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "clientes" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/clientes")}>Lista de Clientes</li>
-            <li onClick={() => navigate("/membresias")}>Membresías</li>
-            <li onClick={() => navigate("/notificaciones")}>Notificaciones</li>
-            <li onClick={() => navigate("/promociones")}>Promociones</li>
-          </ul>
-
-          {/* Menú desplegable de Inventarios */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("inventarios")}
-          >
-            <div className="menu-button">
-              <FaBoxOpen className="icon" />{" "}
-              <span className="menu-text">Inventarios</span>
-              {activeSubmenu === "inventarios" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "inventarios" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/almacenes")}>Almacenes</li>
-            <li onClick={() => navigate("/recepcion-de-mercancia")}>
-              Recepción de Mercancía
-            </li>
-            <li onClick={() => navigate("/movimientos")}>Movimientos</li>{" "}
-            {/* 🔹 Nuevo apartado agregado */}
-          </ul>
-
-          {/* Proveedores */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("proveedores")}
-          >
-            <div className="menu-button">
-              <FaTruck className="icon" />{" "}
-              <span className="menu-text">Proveedores</span>
-              {activeSubmenu === "proveedores" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "proveedores" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/gestion-proveedores")}>
-              Gestión de Proveedores
-            </li>
-            <li onClick={() => navigate("/ordenes-de-compra")}>
-              Órdenes de Compra
-            </li>{" "}
-            {/* 🔹 Nuevo apartado agregado */}
-          </ul>
-
-          {/* 🔹 Gestión de Empleados */}
-          <li className="menu-item" onClick={() => toggleSubmenu("empleados")}>
-            <div className="menu-button">
-              <FaUsers className="icon" />{" "}
-              <span className="menu-text">Gestión de Empleados</span>
-              {activeSubmenu === "empleados" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "empleados" ? "visible" : ""
-            }`}
-          >
-            <li
-              onClick={() => {
-                console.log("Redirigiendo a Gestión de Empleados");
-                navigate("/gestion-empleados");
-              }}
-            >
-              Empleados
-            </li>
-          </ul>
-        </ul>
-
-        {/* Avatar en la esquina inferior */}
-        <div className="user-profile" onClick={toggleMenuUsuario}>
-          <FaUserCircle className="user-avatar" />
-          <span className="user-name">{localEmpleado.nombre}</span>
-        </div>
-        {/* Menú desplegable del usuario */}
-        {menuUsuarioVisible && (
-          <div className={`user-menu ${menuUsuarioVisible ? "visible" : ""}`}>
-            <p>
-              <FaUserCircle /> {localEmpleado.nombre}
-            </p>
-            <p>
-              <FaEnvelope /> {localEmpleado.correo}
-            </p>
-            <button className="logout-button">
-              <FaSignOutAlt /> Cerrar sesión
-            </button>
-          </div>
-        )}
-      </nav>
+      <Sidebar /> {/* ✅ Sidebar importado */}
 
       <div className="proveedores-header">
         <h2>📋 Gestión de Proveedores</h2>
@@ -311,52 +117,27 @@ const GestionProveedores = () => {
             <form onSubmit={handleSubmit}>
               <div className="input-group">
                 <FaUser className="input-icon" />
-                <input
-                  type="text"
-                  name="nombre"
-                  placeholder="Nombre"
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" name="nombre" placeholder="Nombre" onChange={handleChange} required />
               </div>
               <div className="input-group">
                 <FaEnvelope className="input-icon" />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  onChange={handleChange}
-                  required
-                />
+                <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
               </div>
               <div className="input-group">
                 <FaPhone className="input-icon" />
-                <input
-                  type="text"
-                  name="telefono"
-                  placeholder="Teléfono"
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" name="telefono" placeholder="Teléfono" onChange={handleChange} required />
               </div>
               <div className="input-group">
                 <FaMapMarkerAlt className="input-icon" />
-                <input
-                  type="text"
-                  name="direccion"
-                  placeholder="Dirección"
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" name="direccion" placeholder="Dirección" onChange={handleChange} required />
               </div>
-              <button type="submit" className="btn-registrar">
-                Registrar Proveedor
-              </button>
+              <button type="submit" className="btn-registrar">Registrar Proveedor</button>
             </form>
           </div>
         </div>
       )}
 
+      {/* Tabla de proveedores */}
       <div className="table-wrapper">
         <div className="proveedores-container">
           <table className="proveedores-table">
@@ -381,16 +162,10 @@ const GestionProveedores = () => {
                   <td>{proveedor.direccion}</td>
                   <td>{proveedor.fecha_ultimo_abastecimiento || "N/A"}</td>
                   <td className="acciones">
-                    <button
-                      className="btn-accion editar"
-                      onClick={() => handleEditClick(proveedor)}
-                    >
+                    <button className="btn-accion editar" onClick={() => handleEditClick(proveedor)}>
                       <FaEdit />
                     </button>
-                    <button
-                      className="btn-accion eliminar"
-                      onClick={() => eliminarProveedor(proveedor.id_proveedor)}
-                    >
+                    <button className="btn-accion eliminar" onClick={() => eliminarProveedor(proveedor.id_proveedor)}>
                       <FaTrash />
                     </button>
                   </td>
@@ -399,74 +174,6 @@ const GestionProveedores = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Modal para agregar proveedor */}
-        {modalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              {/* 📌 Cabecera del Modal */}
-              <div className="modal-header">
-                <h2>Agregar Proveedor</h2>
-                <button
-                  className="close-modal"
-                  onClick={() => setModalOpen(false)}
-                >
-                  ✖
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                  <FaUser className="input-icon" />
-                  <input
-                    type="text"
-                    name="nombre"
-                    placeholder="Nombre"
-                    value={nuevoProveedor.nombre}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <FaEnvelope className="input-icon" />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={nuevoProveedor.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <FaPhone className="input-icon" />
-                  <input
-                    type="text"
-                    name="telefono"
-                    placeholder="Teléfono"
-                    value={nuevoProveedor.telefono}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <FaMapMarkerAlt className="input-icon" />
-                  <input
-                    type="text"
-                    name="direccion"
-                    placeholder="Dirección"
-                    value={nuevoProveedor.direccion}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn-registrar">
-                  Registrar Proveedor
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

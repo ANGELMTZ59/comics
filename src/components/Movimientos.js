@@ -1,27 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FaHome,
-  FaShoppingCart,
-  FaBoxOpen,
-  FaTruck,
-  FaChevronDown,
-  FaChevronUp,
-  FaUserCircle,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaSearch,
-  FaUsers,
-  FaEnvelope,
-  FaSignOutAlt,
-} from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
+import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
 import "../styles.css";
 
 const Movimientos = () => {
-  const navigate = useNavigate();
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +11,7 @@ const Movimientos = () => {
   const [movimientos, setMovimientos] = useState([
     {
       id_movimiento: 1,
-      tipo_movimiento: "entrada",
+      tipo_movimiento: "Entrada",
       producto: "Cómic Batman #100",
       cantidad: 10,
       empleado: "Juan Pérez",
@@ -37,7 +19,7 @@ const Movimientos = () => {
     },
     {
       id_movimiento: 2,
-      tipo_movimiento: "salida",
+      tipo_movimiento: "Salida",
       producto: "Manga One Piece Vol. 50",
       cantidad: 5,
       empleado: "María López",
@@ -46,7 +28,7 @@ const Movimientos = () => {
   ]);
 
   const [movimientoForm, setMovimientoForm] = useState({
-    tipo_movimiento: "entrada",
+    tipo_movimiento: "Entrada",
     producto: "",
     cantidad: "",
     empleado: "",
@@ -58,7 +40,7 @@ const Movimientos = () => {
       setEditando(true);
     } else {
       setMovimientoForm({
-        tipo_movimiento: "entrada",
+        tipo_movimiento: "Entrada",
         producto: "",
         cantidad: "",
         empleado: "",
@@ -114,169 +96,12 @@ const Movimientos = () => {
     m.producto.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 🔹 Alternar Submenús
-  const toggleSubmenu = (menu) => {
-    setActiveSubmenu(activeSubmenu === menu ? null : menu);
-  };
-
-  // 🔹 Alternar Menú de Usuario
-  const toggleMenuUsuario = () => {
-    setMenuUsuarioVisible(!menuUsuarioVisible);
-  };
-
-  const localEmpleado = {
-    nombre: "Juan Pérez",
-    correo: "juanperez@example.com",
-  };
-
   return (
-    // 📌 EL RETURN DEBE ESTAR DENTRO DE LA FUNCIÓN Movimientos()
     <div className="movimientos-page">
-      <nav className="sidebar">
-        <div className="logo-container">
-          <img
-            src="/images/logo.png"
-            alt="Logo Comics Planet"
-            className="logo"
-          />
-          <h2 className="sidebar-title">Comics Planet</h2>
-        </div>
-        <ul className="sidebar-menu">
-          <li className="menu-item" onClick={() => navigate("/inicioempleado")}>
-            <FaHome className="icon" />{" "}
-            <span className="menu-text">Inicio</span>
-          </li>
+      <Sidebar /> {/* ✅ Sidebar importado */}
 
-          {/* Menú desplegable de Clientes */}
-          <li className="menu-item" onClick={() => toggleSubmenu("clientes")}>
-            <div className="menu-button">
-              <FaShoppingCart className="icon" />{" "}
-              <span className="menu-text">Clientes</span>
-              {activeSubmenu === "clientes" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "clientes" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/clientes")}>Lista de Clientes</li>
-            <li onClick={() => navigate("/membresias")}>Membresías</li>
-            <li onClick={() => navigate("/notificaciones")}>Notificaciones</li>
-            <li onClick={() => navigate("/promociones")}>Promociones</li>
-          </ul>
-
-          {/* Menú desplegable de Inventarios */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("inventarios")}
-          >
-            <div className="menu-button">
-              <FaBoxOpen className="icon" />{" "}
-              <span className="menu-text">Inventarios</span>
-              {activeSubmenu === "inventarios" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "inventarios" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/almacenes")}>Almacenes</li>
-            <li onClick={() => navigate("/recepcion-de-mercancia")}>
-              Recepción de Mercancía
-            </li>
-            <li onClick={() => navigate("/movimientos")}>Movimientos</li>{" "}
-            {/* 🔹 Nuevo apartado agregado */}
-          </ul>
-
-          {/* Proveedores */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("proveedores")}
-          >
-            <div className="menu-button">
-              <FaTruck className="icon" />{" "}
-              <span className="menu-text">Proveedores</span>
-              {activeSubmenu === "proveedores" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "proveedores" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/gestion-proveedores")}>
-              Gestión de Proveedores
-            </li>
-            <li onClick={() => navigate("/ordenes-de-compra")}>
-              Órdenes de Compra
-            </li>{" "}
-            {/* 🔹 Nuevo apartado agregado */}
-          </ul>
-
-          {/* 🔹 Gestión de Empleados */}
-          <li className="menu-item" onClick={() => toggleSubmenu("empleados")}>
-            <div className="menu-button">
-              <FaUsers className="icon" />{" "}
-              <span className="menu-text">Gestión de Empleados</span>
-              {activeSubmenu === "empleados" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "empleados" ? "visible" : ""
-            }`}
-          >
-            <li
-              onClick={() => {
-                console.log("Redirigiendo a Gestión de Empleados");
-                navigate("/gestion-empleados");
-              }}
-            >
-              Empleados
-            </li>
-          </ul>
-        </ul>
-
-        {/* Avatar en la esquina inferior */}
-        <div className="user-profile" onClick={toggleMenuUsuario}>
-          <FaUserCircle className="user-avatar" />
-          <span className="user-name">{localEmpleado.nombre}</span>
-        </div>
-        {/* Menú desplegable del usuario */}
-        {menuUsuarioVisible && (
-          <div className={`user-menu ${menuUsuarioVisible ? "visible" : ""}`}>
-            <p>
-              <FaUserCircle /> {localEmpleado.nombre}
-            </p>
-            <p>
-              <FaEnvelope /> {localEmpleado.correo}
-            </p>
-            <button className="logout-button">
-              <FaSignOutAlt /> Cerrar sesión
-            </button>
-          </div>
-        )}
-      </nav>
-
-      <main className="main-content">
+      <div className="contenedor-movimientos">
+        {/* 📌 Encabezado */}
         <div className="header-container">
           <h2>📦 Registro de Movimientos</h2>
           <button className="btn-agregar" onClick={() => abrirModal()}>
@@ -284,8 +109,19 @@ const Movimientos = () => {
           </button>
         </div>
 
-        {/* Tabla de movimientos */}
-        <div className="table-wrapper">
+        {/* 📌 Barra de Búsqueda */}
+        <div className="buscador">
+          <FaSearch className="icono-busqueda" />
+          <input
+            type="text"
+            placeholder="Buscar por producto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* 📌 Tabla de Movimientos */}
+        <div className="tabla-container">
           <table className="movimientos-table">
             <thead>
               <tr>
@@ -305,13 +141,11 @@ const Movimientos = () => {
                   <td>{mov.cantidad}</td>
                   <td>{mov.empleado}</td>
                   <td>{mov.fecha_movimiento}</td>
-                  <td>
-                    <button onClick={() => abrirModal(mov)}>
+                  <td className="acciones">
+                    <button className="btn-editar" onClick={() => abrirModal(mov)}>
                       <FaEdit />
                     </button>
-                    <button
-                      onClick={() => eliminarMovimiento(mov.id_movimiento)}
-                    >
+                    <button className="btn-eliminar" onClick={() => eliminarMovimiento(mov.id_movimiento)}>
                       <FaTrash />
                     </button>
                   </td>
@@ -320,7 +154,56 @@ const Movimientos = () => {
             </tbody>
           </table>
         </div>
-      </main>
+
+        {/* 📌 Modal de Formulario */}
+        {modalOpen && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>{editando ? "Editar Movimiento" : "Nuevo Movimiento"}</h3>
+              <label>Tipo de Movimiento:</label>
+              <select
+                value={movimientoForm.tipo_movimiento}
+                onChange={(e) =>
+                  setMovimientoForm({ ...movimientoForm, tipo_movimiento: e.target.value })
+                }
+              >
+                <option value="Entrada">Entrada</option>
+                <option value="Salida">Salida</option>
+              </select>
+              <label>Producto:</label>
+              <input
+                type="text"
+                value={movimientoForm.producto}
+                onChange={(e) =>
+                  setMovimientoForm({ ...movimientoForm, producto: e.target.value })
+                }
+              />
+              <label>Cantidad:</label>
+              <input
+                type="number"
+                value={movimientoForm.cantidad}
+                onChange={(e) =>
+                  setMovimientoForm({ ...movimientoForm, cantidad: e.target.value })
+                }
+              />
+              <label>Empleado:</label>
+              <input
+                type="text"
+                value={movimientoForm.empleado}
+                onChange={(e) =>
+                  setMovimientoForm({ ...movimientoForm, empleado: e.target.value })
+                }
+              />
+              <button className="btn-guardar" onClick={guardarMovimiento}>
+                Guardar
+              </button>
+              <button className="btn-cerrar" onClick={cerrarModal}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

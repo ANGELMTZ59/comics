@@ -261,8 +261,8 @@ const Almacenes = () => {
                 })
               }
             />
-            <button onClick={agregarProducto}>Guardar</button>
-            <button onClick={() => setMostrarFormulario(false)}>
+            <button className="btn-guardar" onClick={agregarProducto}>Guardar</button>
+            <button className="btn-cerrar" onClick={() => setMostrarFormulario(false)}>
               Cancelar
             </button>
           </div>
