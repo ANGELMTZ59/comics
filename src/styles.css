@@ -1086,3 +1086,320 @@ body {
         padding: 15px;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------ NOTIFICACIONES.CSS ------------ */
+/* Contenedor principal */
+/* Contenedor principal */
+.notificaciones-container {
+    width: calc(100% - 260px);
+    margin-left: 260px;
+    padding: 20px;
+}
+
+/* Encabezado con Botón */
+.titulo-y-boton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.titulo-y-boton h2 {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* Botón Crear Notificación */
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.btn-agregar:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+/* Buscador */
+.buscador {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.buscador input {
+    border: none;
+    outline: none;
+    padding: 10px;
+    width: 100%;
+    font-size: 16px;
+}
+
+.icono-busqueda {
+    margin-right: 10px;
+    color: #555;
+    font-size: 18px;
+}
+
+/* Contenedor de la tabla */
+.tabla-container {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    overflow-x: auto;
+    max-width: 1200px;
+}
+
+/* Tabla */
+.notificaciones-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.notificaciones-table th {
+    background-color: #2c3e50;
+    color: white;
+    font-weight: bold;
+    padding: 14px;
+    font-size: 16px;
+    border-bottom: 3px solid #1a252f;
+}
+
+.notificaciones-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 15px;
+}
+
+/* Mejora en las filas de Cliente */
+.notificaciones-table td strong {
+    font-size: 15px;
+    color: #2c3e50;
+}
+
+.notificaciones-table td small {
+    color: #777;
+    font-size: 13px;
+}
+
+/* Estado de notificación */
+.estado.no-leído {
+    color: red;
+    font-weight: bold;
+}
+
+.estado.leído {
+    color: green;
+    font-weight: bold;
+}
+
+/* Botones de Acción */
+.acciones {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-ver {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-leido {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-eliminar {
+    background-color: #dc3545;
+    color: white;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------ Promociones.CSS ------------ */
+/* 📌 Ajuste del contenedor de la tabla */
+.contenedor-tabla {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* 📌 Estilo de la tabla */
+.tabla-container {
+    width: 85%;
+    max-width: 1100px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+/* 📌 Ajuste de la tabla de promociones */
+.promociones-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* 📌 Ajuste de las celdas */
+.promociones-table th,
+.promociones-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* 📌 Reducir el ancho de la descripción */
+.descripcion-columna {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 📌 Estado de promociones */
+.estado-activa {
+    color: green;
+    font-weight: bold;
+}
+
+.estado-inactiva {
+    color: red;
+    font-weight: bold;
+}
+
+/* 📌 Estilos de botones */
+.btn-toggle {
+    background-color: #007bff;
+    color: white;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-editar {
+    background-color: #28a745;
+    color: white;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-eliminar {
+    background-color: #dc3545;
+    color: white;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* 📌 Estilos del encabezado */
+.encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 85%;
+    max-width: 1100px;
+    margin: auto;
+}
+
+/* 📌 Ajuste del botón "Agregar Promoción" */
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.btn-agregar:hover {
+    background-color: #218838;
+}
+
+/* 📌 Buscador */
+.buscador {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+    width: 85%;
+    max-width: 1100px;
+    margin: auto;
+}
+
+/* 📌 Responsive */
+@media (max-width: 768px) {
+    .tabla-container {
+        width: 100%;
+        padding: 10px;
+    }
+}

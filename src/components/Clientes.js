@@ -16,7 +16,9 @@ import {
   FaBoxOpen,
   FaTruck,
   FaUsers,
+  FaTimes,
 } from "react-icons/fa";
+import * as XLSX from "xlsx";
 import "../styles.css";
 
 const Clientes = () => {
@@ -32,49 +34,136 @@ const Clientes = () => {
       fecha_registro: "2024-01-15",
       nivel_membresia: "Gold",
     },
+  ]);
+
+  const [membresias, setMembresias] = useState([
     {
-      id_cliente: 2,
-      nombre: "María González",
-      email: "maria@example.com",
-      telefono: "555-5678",
-      direccion: "Calle 45 #89",
-      fecha_registro: "2023-12-10",
-      nivel_membresia: "Platinum",
-    },
-    {
-      id_cliente: 3,
-      nombre: "Juan Pérez",
-      email: "juanp@example.com",
-      telefono: "555-8765",
-      direccion: "Colonia Vista Alegre",
-      fecha_registro: "2022-11-20",
-      nivel_membresia: "Regular",
-    },
-    {
-      id_cliente: 4,
-      nombre: "Ana Ramírez",
-      email: "ana@example.com",
-      telefono: "555-3344",
-      direccion: "Boulevard Sur 45",
-      fecha_registro: "2024-02-05",
-      nivel_membresia: "Gold",
+      id_membresia: 1,
+      id_cliente: 1,
+      nivel: "Gold",
+      fecha_inicio: "2024-01-15",
+      fecha_fin: "2025-01-15",
+      beneficios: "Descuento en compras",
     },
   ]);
 
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+
+  const [clienteForm, setClienteForm] = useState({
+    nombre: "",
+    email: "",
+    telefono: "",
+    direccion: "",
+    nivel_membresia: "regular",
+    frecuencia_compra: "baja",
+  });
+
+  // 🟢 ABRIR MODAL PARA AGREGAR CLIENTE
+  const abrirModalAgregar = () => {
+    setEditingClient(null);
+    setClienteForm({
+      nombre: "",
+      email: "",
+      telefono: "",
+      direccion: "",
+      nivel_membresia: "regular",
+      frecuencia_compra: "baja",
+    });
+    setModalVisible(true);
+  };
+
+  // 🟢 ABRIR MODAL PARA EDITAR CLIENTE
+  const abrirModalEditar = (cliente) => {
+    setEditingClient(cliente);
+    setClienteForm({
+      nombre: cliente.nombre,
+      email: cliente.email,
+      telefono: cliente.telefono,
+      direccion: cliente.direccion,
+      nivel_membresia: cliente.nivel_membresia,
+      frecuencia_compra: cliente.frecuencia_compra,
+    });
+    setModalVisible(true);
+  };
+
+  // 🔴 CERRAR MODAL
+  const cerrarModal = () => {
+    setModalVisible(false);
+  };
+
+  // ✅ GUARDAR CLIENTE
+  const guardarCliente = () => {
+    if (
+      !clienteForm.nombre ||
+      !clienteForm.email ||
+      !clienteForm.telefono ||
+      !clienteForm.direccion
+    ) {
+      alert("Por favor, completa todos los campos.");
+      return;
+    }
+
+    if (editingClient) {
+      // Editar cliente existente
+      setClientes(
+        clientes.map((c) =>
+          c.id_cliente === editingClient.id_cliente
+            ? { ...c, ...clienteForm }
+            : c
+        )
+      );
+    } else {
+      // Agregar nuevo cliente
+      const id_cliente = clientes.length + 1;
+      setClientes([
+        ...clientes,
+        {
+          ...clienteForm,
+          id_cliente,
+          fecha_registro: new Date().toISOString().split("T")[0],
+        },
+      ]);
+    }
+
+    cerrarModal();
+  };
+
+  // ❌ ELIMINAR CLIENTE
+  const eliminarCliente = (id_cliente) => {
+    const confirmacion = window.confirm(
+      "¿Estás seguro de que quieres eliminar este cliente?"
+    );
+    if (confirmacion) {
+      setClientes(
+        clientes.filter((cliente) => cliente.id_cliente !== id_cliente)
+      );
+    }
+  };
+
+  // 🔵 EXPORTAR A EXCEL
+  const exportarExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(clientes);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
+    XLSX.writeFile(workbook, "Clientes.xlsx");
+  };
 
   const localEmpleado = {
     nombre: "Juan Pérez",
     correo: "juanperez@example.com",
   };
 
-  const toggleSubmenu = (menu) => {
-    setActiveSubmenu(activeSubmenu === menu ? null : menu);
-  };
+  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
 
   const toggleMenuUsuario = () => {
     setMenuUsuarioVisible(!menuUsuarioVisible);
+  };
+
+  const [activeSubmenu, setActiveSubmenu] = useState(null);
+
+  const toggleSubmenu = (menu) => {
+    setActiveSubmenu(activeSubmenu === menu ? null : menu);
   };
 
   return (
@@ -215,21 +304,21 @@ const Clientes = () => {
         )}
       </nav>
 
-      <div className="clientes-container">
-        {/* Título y botones */}
+      <div className="clientes-page">
+        {/* Encabezado */}
         <div className="header-clientes">
           <h2>📜 Gestión de Clientes</h2>
           <div className="botones-clientes">
-            <button className="btn-agregar">
+            <button className="btn-agregar" onClick={abrirModalAgregar}>
               <FaPlus /> Agregar Cliente
             </button>
-            <button className="btn-exportar">
-              <FaFileExcel /> Exportar a Excel
+            <button className="btn-exportar" onClick={exportarExcel}>
+              📥 Exportar a Excel
             </button>
           </div>
         </div>
 
-        {/* Barra de búsqueda */}
+        {/* Buscador */}
         <div className="buscador">
           <FaSearch className="icono-busqueda" />
           <input
@@ -240,7 +329,7 @@ const Clientes = () => {
           />
         </div>
 
-        {/* Tabla de clientes */}
+        {/* Tabla con filtro */}
         <div className="tabla-container">
           <table className="clientes-table">
             <thead>
@@ -252,6 +341,7 @@ const Clientes = () => {
                 <th>Dirección</th>
                 <th>Registro</th>
                 <th>Membresía</th>
+                <th>Frecuencia</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -278,11 +368,18 @@ const Clientes = () => {
                     <td>{cliente.direccion}</td>
                     <td>{cliente.fecha_registro}</td>
                     <td>{cliente.nivel_membresia}</td>
+                    <td>{cliente.frecuencia_compra}</td>
                     <td className="acciones">
-                      <button className="btn-editar">
+                      <button
+                        className="btn-editar"
+                        onClick={() => abrirModalEditar(cliente)}
+                      >
                         <FaEdit />
                       </button>
-                      <button className="btn-eliminar">
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => eliminarCliente(cliente.id_cliente)}
+                      >
                         <FaTrash />
                       </button>
                     </td>
@@ -291,6 +388,75 @@ const Clientes = () => {
             </tbody>
           </table>
         </div>
+
+        {/* MODAL MEJORADO */}
+        {modalVisible && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>{editingClient ? "Editar Cliente" : "Agregar Cliente"}</h3>
+              <div className="modal-form">
+                <div className="input-group">
+                  <label>Nombre</label>
+                  <input
+                    type="text"
+                    value={clienteForm.nombre}
+                    onChange={(e) =>
+                      setClienteForm({ ...clienteForm, nombre: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={clienteForm.email}
+                    onChange={(e) =>
+                      setClienteForm({ ...clienteForm, email: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Teléfono</label>
+                  <input
+                    type="text"
+                    value={clienteForm.telefono}
+                    onChange={(e) =>
+                      setClienteForm({
+                        ...clienteForm,
+                        telefono: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Dirección</label>
+                  <input
+                    type="text"
+                    value={clienteForm.direccion}
+                    onChange={(e) =>
+                      setClienteForm({
+                        ...clienteForm,
+                        direccion: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-buttons">
+                <button className="btn-guardar" onClick={guardarCliente}>
+                  Guardar
+                </button>
+                <button className="btn-cerrar" onClick={cerrarModal}>
+                  <FaTimes /> Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
