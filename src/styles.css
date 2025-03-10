@@ -1,0 +1,984 @@
+/* 📌 Contenedor principal */
+.empleados-page,
+.movimientos-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: calc(100% - 250px);
+    min-height: 100vh;
+    padding: 20px;
+    margin-left: 250px;
+}
+
+/* 🏷️ Contenedor del título y botón */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1100px;
+    margin-bottom: 20px;
+}
+
+.header-container h2 {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.btn-agregar:hover {
+    background-color: #218838;
+}
+
+/* 🎨 Contenedor de la tabla */
+.table-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Tabla centrada y ajustada */
+.empleados-table,
+.movimientos-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.empleados-table th,
+.movimientos-table th {
+    background-color: #343a40;
+    color: white;
+    padding: 14px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.empleados-table th,
+.empleados-table td,
+.movimientos-table th,
+.movimientos-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+    font-size: 16px;
+}
+
+.empleados-table tbody tr:last-child td,
+.movimientos-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.empleados-table th:nth-child(1),
+.empleados-table td:nth-child(1),
+.movimientos-table th:nth-child(1),
+.movimientos-table td:nth-child(1) {
+    width: 5%;
+    text-align: center;
+}
+
+.empleados-table th:nth-child(2),
+.empleados-table td:nth-child(2),
+.movimientos-table th:nth-child(2),
+.movimientos-table td:nth-child(2) {
+    width: 20%;
+}
+
+.empleados-table th:nth-child(3),
+.empleados-table td:nth-child(3),
+.movimientos-table th:nth-child(3),
+.movimientos-table td:nth-child(3) {
+    width: 25%;
+}
+
+.empleados-table th:nth-child(4),
+.empleados-table td:nth-child(4),
+.movimientos-table th:nth-child(4),
+.movimientos-table td:nth-child(4) {
+    width: 15%;
+}
+
+.empleados-table th:nth-child(5),
+.empleados-table td:nth-child(5),
+.movimientos-table th:nth-child(5),
+.movimientos-table td:nth-child(5),
+.empleados-table th:nth-child(6),
+.empleados-table td:nth-child(6),
+.movimientos-table th:nth-child(6),
+.movimientos-table td:nth-child(6) {
+    text-align: center;
+    width: 10%;
+}
+
+.empleados-table tr:hover,
+.movimientos-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* ✅ Botón de estado ON/OFF */
+.btn-estado {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.activo {
+    color: #28a745;
+    transition: color 0.3s ease;
+}
+
+.inactivo {
+    color: #dc3545;
+    transition: color 0.3s ease;
+}
+
+/* 📌 Ajustar la columna de acciones */
+.empleados-table td.acciones,
+.movimientos-table td.acciones {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+}
+
+.acciones .btn-accion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.acciones .editar,
+.acciones .eliminar {
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.acciones .editar {
+    background-color: transparent;
+    color: #007bff;
+}
+
+.acciones .editar:hover {
+    background-color: rgba(0, 123, 255, 0.2);
+    border-radius: 5px;
+}
+
+.acciones .eliminar {
+    background-color: transparent;
+    color: #dc3545;
+}
+
+.acciones .eliminar:hover {
+    background-color: rgba(220, 53, 69, 0.2);
+    border-radius: 5px;
+}
+
+/* 📌 Estilizar el modal para que luzca más profesional */
+.modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    width: 400px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    position: relative;
+}
+
+.modal-content h3 {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.btn-registrar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    flex: 1;
+}
+
+.btn-cerrar {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    flex: 1;
+}
+
+.btn-registrar:hover {
+    background-color: #218838;
+}
+
+.btn-cerrar:hover {
+    background-color: #c82333;
+}
+
+.modal .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #dc3545;
+}
+
+.modal .close-button:hover {
+    color: #c82333;
+}
+
+
+
+
+/* ✅ Contenedor del logo */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 10px 0;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-title {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 📌 Menú */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s ease-in-out;
+    border-radius: 8px;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.02);
+}
+
+.menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.icon {
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.menu-text {
+    font-size: 14px; /* Reduce el tamaño del texto */
+    white-space: nowrap; /* Evita que se parta en varias líneas */
+    overflow: hidden; /* Oculta el texto extra */
+    text-overflow: ellipsis; /* Agrega "..." si el texto es muy largo */
+    transition: font-size 0.3s ease-in-out;
+}
+
+
+/* 📌 Estilos mejorados para las sublistas */
+.submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: #2c075056;
+    border-left: 3px solid #b7a311;
+    border-radius: 5px;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* 📌 Cuando la sublista está activa */
+.submenu.visible {
+    max-height: 500px; /* Ajusta el tamaño según sea necesario */
+    opacity: 1;
+}
+
+/* 📌 Estilos para los elementos de las sublistas */
+.submenu li {
+    padding: 10px 18px;
+    padding-left: 40px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #e0e0e0;
+    transition: background 0.3s, color 0.3s;
+}
+
+/* 📌 Hover en submenús */
+.submenu li:hover {
+    background-color: #3a3a4b;
+    color: #ffffff;
+}
+
+/* 🧑‍💼 Perfil de usuario */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    cursor: pointer;
+    margin-top: auto;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.user-profile:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-name {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* 🚪 Menú desplegable del usuario */
+.user-menu {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: #25253a;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+}
+
+.user-menu.visible {
+    display: flex;
+}
+
+/* ❌ Botón de cerrar sesión */
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+    width: 100%;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------ INICIOEMPLEADOS.CSS ------------ */
+/* 📌 Estilos globales */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Arial", sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* 📌 Contenedor general */
+.inicio-empleado {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 🏠 Contenido principal */
+/* 📌 Ajustar el contenido para que no quede detrás del sidebar */
+.main-content {
+    flex-grow: 1;
+    margin-left: 550px; /* Ajuste basado en el ancho del sidebar */
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: calc(100% - 270px); /* Se ajusta dinámicamente */
+    transition: margin-left 0.3s ease-in-out; /* Suaviza la animación */
+}
+
+/* 📌 Sidebar - Estilo normal (cuando está expandido) */
+.sidebar {
+    width: 270px;
+    background-color: #4c51af;
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    padding: 20px;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+}
+
+/* 📌 Sidebar colapsado en pantallas pequeñas */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 70px; /* Sidebar colapsado */
+        padding: 15px; /* Reduce el padding */
+    }
+
+    .logo-container {
+        justify-content: center; /* Centra el logo */
+    }
+
+    .logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .sidebar-title {
+        display: none; /* Oculta el texto del logo */
+    }
+
+    .menu-text {
+        display: none; /* Oculta los nombres de las opciones */
+    }
+
+    .submenu {
+        display: none; /* Oculta las sublistas cuando está colapsado */
+    }
+
+    .submenu.visible {
+        display: block;
+    }
+
+    .sidebar-menu .menu-item {
+        justify-content: center; /* Centra los iconos */
+    }
+
+    .menu-item .icon {
+        margin-right: 0; /* Elimina el margen derecho */
+    }
+
+    .main-content {
+        margin-left: 70px; /* Ajusta el contenido al colapsar */
+        width: calc(100% - 70px);
+    }
+}
+
+/* 🧑‍💼 Perfil del Usuario */
+.perfil-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+}
+
+.perfil-container h2 {
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.perfil-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.perfil-item {
+    font-size: 16px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+/* ✏️ Botón de editar */
+.editar-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.editar-button:hover {
+    background-color: #0056b3;
+}
+
+/* 📌 Segundo cuadro para información extra */
+.extra-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+}
+
+.extra-container h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+/* 🏷️ Tablas */
+.table-wrapper {
+    width: calc(100% - 270px);
+    margin-left: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+/* 🎨 Botón de agregar */
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-agregar:hover {
+    background-color: #218838;
+}
+
+/* 📌 Modales */
+.modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.modal-content {
+    background: white;
+    width: 400px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    position: relative;
+}
+
+/* 🎨 Botones dentro del modal */
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.btn-registrar,
+.btn-cerrar {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.btn-registrar {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-registrar:hover {
+    background-color: #218838;
+}
+
+.btn-cerrar {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-cerrar:hover {
+    background-color: #c82333;
+}
+
+/* ❌ Botón de cerrar modal */
+.modal .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #dc3545;
+}
+
+.modal .close-button:hover {
+    color: #c82333;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ------------ CLIENTES.CSS ------------ */
+/* 📌 Contenedor principal de la página de clientes */
+.clientes-page {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden; /* Evita que el contenido se desborde */
+}
+
+/* 📌 Contenido principal alineado correctamente */
+.clientes-main {
+    flex-grow: 1;
+    margin-left: 330px; /* Ajustado al ancho del sidebar */
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: calc(100% - 270px);
+    transition: margin-left 0.3s ease-in-out;
+    overflow-x: auto; /* Permite scroll horizontal si el contenido se desborda */
+    align-items: center; /* Centra la tabla */
+}
+
+/* 📌 Ajuste cuando el sidebar está colapsado */
+@media (max-width: 1024px) {
+    .clientes-main {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+    }
+}
+
+/* 📌 Contenedor del título y botón */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Estilo del título */
+.titulo-clientes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* 📌 Botón de agregar cliente */
+.btn-agregar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-agregar:hover {
+    background-color: #218838;
+}
+/* 📌 Estilo para la tabla */
+.clientes-table {
+    width: 100%;
+    max-width: 1100px;
+    border-collapse: collapse;
+    table-layout: auto; /* Permite ajuste dinámico */
+    white-space: nowrap; /* Evita saltos de línea no deseados */
+    background: white; /* Color de fondo de la tabla */
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+}
+
+/* 📌 Estilo de encabezado */
+.clientes-table th {
+    background-color: #343a40; /* Color oscuro */
+    color: white;
+    padding: 14px;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* 📌 Celdas de la tabla */
+.clientes-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+    font-size: 16px;
+    vertical-align: middle; /* Asegura que el texto se alinee correctamente */
+    background: white; /* Fondo blanco */
+}
+
+/* 📌 Alternar colores en filas para mejorar lectura */
+.clientes-table tbody tr:nth-child(even) {
+    background: #f8f9fa; /* Color de fondo para filas pares */
+}
+
+/* 📌 Hover en filas */
+.clientes-table tbody tr:hover {
+    background: #e9ecef; /* Color más claro al pasar el mouse */
+}
+
+/* 📌 Evitar sobreposición de contenido */
+.clientes-table td {
+    word-break: keep-all;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Agrega "..." si el texto es demasiado largo */
+    max-width: 200px;
+}
+
+/* 📌 Ajuste de columnas */
+.clientes-table td:nth-child(2), /* Nombre */
+.clientes-table td:nth-child(3), /* Email */
+.clientes-table td:nth-child(4), /* Teléfono */
+.clientes-table td:nth-child(5) /* Dirección */ {
+    min-width: 150px;
+}
+
+/* 📌 Teléfono en una sola línea */
+.clientes-table td:nth-child(4) {
+    white-space: nowrap;
+}
+
+/* 📌 Scroll horizontal sin romper la estructura */
+@media (max-width: 768px) {
+    .clientes-container {
+        overflow-x: auto;
+        display: block;
+    }
+
+    .clientes-table {
+        min-width: 900px;
+    }
+}
+
+
+/* 📌 Columna de Membresías con colores */
+.membresia.gold {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.membresia.silver {
+    color: #c0c0c0;
+    font-weight: bold;
+}
+
+.membresia.bronze {
+    color: #cd7f32;
+    font-weight: bold;
+}
+
+/* 📌 Botones de acciones */
+.acciones {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-editar, .btn-eliminar {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.btn-editar {
+    color: #007bff;
+}
+
+.btn-editar:hover {
+    color: #0056b3;
+}
+
+.btn-eliminar {
+    color: #dc3545;
+}
+
+.btn-eliminar:hover {
+    color: #c82333;
+}
+
+/* 📌 Scroll horizontal en pantallas pequeñas sin comprimir la tabla */
+@media (max-width: 768px) {
+    .clientes-container {
+        overflow-x: auto;
+        display: block;
+    }
+
+    .clientes-table {
+        min-width: 900px; /* Evita que la tabla se haga muy pequeña */
+    }
+}
