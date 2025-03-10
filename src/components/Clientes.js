@@ -1,41 +1,73 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaUser,
+  FaSearch,
+  FaPlus,
+  FaFileExcel,
+  FaEdit,
+  FaTrash,
+  FaUserCircle,
   FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaCrown,
+  FaSignOutAlt,
+  FaChevronDown,
+  FaChevronUp,
   FaHome,
   FaShoppingCart,
   FaBoxOpen,
   FaTruck,
-  FaChevronDown,
-  FaChevronUp,
   FaUsers,
-  FaUserCircle,
-  FaSignOutAlt,
-  FaHashtag,
 } from "react-icons/fa";
 import "../styles.css";
 
 const Clientes = () => {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [clientes, setClientes] = useState([
+    {
+      id_cliente: 1,
+      nombre: "Carlos López",
+      email: "carlos@example.com",
+      telefono: "555-1234",
+      direccion: "Av. Central 123",
+      fecha_registro: "2024-01-15",
+      nivel_membresia: "Gold",
+    },
+    {
+      id_cliente: 2,
+      nombre: "María González",
+      email: "maria@example.com",
+      telefono: "555-5678",
+      direccion: "Calle 45 #89",
+      fecha_registro: "2023-12-10",
+      nivel_membresia: "Platinum",
+    },
+    {
+      id_cliente: 3,
+      nombre: "Juan Pérez",
+      email: "juanp@example.com",
+      telefono: "555-8765",
+      direccion: "Colonia Vista Alegre",
+      fecha_registro: "2022-11-20",
+      nivel_membresia: "Regular",
+    },
+    {
+      id_cliente: 4,
+      nombre: "Ana Ramírez",
+      email: "ana@example.com",
+      telefono: "555-3344",
+      direccion: "Boulevard Sur 45",
+      fecha_registro: "2024-02-05",
+      nivel_membresia: "Gold",
+    },
+  ]);
+
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
-  const [localEmpleado] = useState({
+
+  const localEmpleado = {
     nombre: "Juan Pérez",
     correo: "juanperez@example.com",
-  });
-
-  useEffect(() => {
-    // Llamada a la API para obtener la lista de clientes
-    fetch("http://localhost:5000/api/clientes")
-      .then((res) => res.json())
-      .then((data) => setClientes(data))
-      .catch((error) => console.error("Error al obtener clientes:", error));
-  }, []);
+  };
 
   const toggleSubmenu = (menu) => {
     setActiveSubmenu(activeSubmenu === menu ? null : menu);
@@ -183,60 +215,83 @@ const Clientes = () => {
         )}
       </nav>
 
-      <main className="clientes-main">
-        {/* 📌 Contenedor del título y botón */}
-        <div className="header-container">
-          <div className="titulo-clientes">
-            <span role="img" aria-label="documento">
-              📜
-            </span>
-            <h2>Gestión de Clientes</h2>
+      <div className="clientes-container">
+        {/* Sección de encabezado con título y botones */}
+        <div className="header-clientes">
+          <h2>📜 Gestión de Clientes</h2>
+          <div className="botones-clientes">
+            <button className="btn-agregar">
+              <FaPlus /> Agregar Cliente
+            </button>
+            <button className="btn-exportar">
+              <FaFileExcel /> Exportar a Excel
+            </button>
           </div>
-          <button className="btn-agregar">
-            <span role="img" aria-label="agregar">
-              ➕
-            </span>
-            Agregar Cliente
-          </button>
         </div>
 
-        {/* 📌 Contenedor de la tabla bien alineada */}
-        <div className="clientes-container">
-          <div className="tabla-container">
-            <div className="tabla-wrapper">
-              <table className="clientes-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Dirección</th>
-                    <th>Registro</th>
-                    <th>Membresía</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>001</td>
-                    <td>Juan Pérez</td>
-                    <td>juan@example.com</td>
-                    <td>+52 55 1234 5678</td>
-                    <td>Av. Reforma 123</td>
-                    <td>2025-03-07</td>
-                    <td className="membresia gold">Gold</td>
+        {/* Buscador */}
+        <div className="buscador">
+          <FaSearch className="icono-busqueda" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, email o membresía..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Tabla */}
+        <div className="tabla-container">
+          <table className="clientes-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Dirección</th>
+                <th>Registro</th>
+                <th>Membresía</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes
+                .filter(
+                  (cliente) =>
+                    cliente.nombre
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    cliente.email
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    cliente.nivel_membresia
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                )
+                .map((cliente, index) => (
+                  <tr key={cliente.id_cliente}>
+                    <td>{index + 1}</td>
+                    <td>{cliente.nombre}</td>
+                    <td>{cliente.email}</td>
+                    <td>{cliente.telefono}</td>
+                    <td>{cliente.direccion}</td>
+                    <td>{cliente.fecha_registro}</td>
+                    <td>{cliente.nivel_membresia}</td>
                     <td className="acciones">
-                      <button className="btn-editar">✏️</button>
-                      <button className="btn-eliminar">🗑️</button>
+                      <button className="btn-editar">
+                        <FaEdit />
+                      </button>
+                      <button className="btn-eliminar">
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
