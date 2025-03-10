@@ -11,63 +11,123 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaUsers, // 🔹 Asegúrate de importar FaUsers
-  FaEnvelope, // 🔹 Asegúrate de importar FaEnvelope
+  FaSearch,
+  FaUsers,
+  FaEnvelope,
   FaSignOutAlt,
 } from "react-icons/fa";
 import "../styles.css";
 
 const Movimientos = () => {
-  // 📌 La función está correctamente definida aquí
   const navigate = useNavigate();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [movimientos, setMovimientos] = useState([
     {
-      id: 1,
-      tipo: "Entrada",
+      id_movimiento: 1,
+      tipo_movimiento: "entrada",
       producto: "Cómic Batman #100",
       cantidad: 10,
       empleado: "Juan Pérez",
-      fecha: "2025-03-05",
+      fecha_movimiento: "2025-03-05",
     },
     {
-      id: 2,
-      tipo: "Salida",
+      id_movimiento: 2,
+      tipo_movimiento: "salida",
       producto: "Manga One Piece Vol. 50",
       cantidad: 5,
       empleado: "María López",
-      fecha: "2025-03-04",
+      fecha_movimiento: "2025-03-04",
     },
   ]);
 
-  const [empleado, setEmpleado] = useState({
-    nombre: "Juan Pérez",
-    correo: "juanperez@example.com",
+  const [movimientoForm, setMovimientoForm] = useState({
+    tipo_movimiento: "entrada",
+    producto: "",
+    cantidad: "",
+    empleado: "",
   });
 
+  const abrirModal = (movimiento = null) => {
+    if (movimiento) {
+      setMovimientoForm(movimiento);
+      setEditando(true);
+    } else {
+      setMovimientoForm({
+        tipo_movimiento: "entrada",
+        producto: "",
+        cantidad: "",
+        empleado: "",
+      });
+      setEditando(false);
+    }
+    setModalOpen(true);
+  };
+
+  const cerrarModal = () => {
+    setModalOpen(false);
+    setEditando(false);
+  };
+
+  const guardarMovimiento = () => {
+    if (
+      !movimientoForm.producto ||
+      !movimientoForm.cantidad ||
+      !movimientoForm.empleado
+    ) {
+      alert("Por favor, completa todos los campos.");
+      return;
+    }
+
+    if (editando) {
+      setMovimientos(
+        movimientos.map((m) =>
+          m.id_movimiento === movimientoForm.id_movimiento ? movimientoForm : m
+        )
+      );
+    } else {
+      setMovimientos([
+        ...movimientos,
+        {
+          ...movimientoForm,
+          id_movimiento: movimientos.length + 1,
+          fecha_movimiento: new Date().toISOString().split("T")[0],
+        },
+      ]);
+    }
+    cerrarModal();
+  };
+
+  const eliminarMovimiento = (id_movimiento) => {
+    if (window.confirm("¿Seguro que deseas eliminar este movimiento?")) {
+      setMovimientos(
+        movimientos.filter((m) => m.id_movimiento !== id_movimiento)
+      );
+    }
+  };
+
+  const movimientosFiltrados = movimientos.filter((m) =>
+    m.producto.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // 🔹 Alternar Submenús
   const toggleSubmenu = (menu) => {
     setActiveSubmenu(activeSubmenu === menu ? null : menu);
   };
 
+  // 🔹 Alternar Menú de Usuario
   const toggleMenuUsuario = () => {
     setMenuUsuarioVisible(!menuUsuarioVisible);
   };
 
-  const handleEliminar = (id) => {
-    const confirmacion = window.confirm(
-      "¿Seguro que deseas eliminar este movimiento?"
-    );
-    if (confirmacion) {
-      setMovimientos(movimientos.filter((mov) => mov.id !== id));
-    }
-  };
-
-  const [localEmpleado, setLocalEmpleado] = useState({
+  const localEmpleado = {
     nombre: "Juan Pérez",
     correo: "juanperez@example.com",
-  });
+  };
 
   return (
     // 📌 EL RETURN DEBE ESTAR DENTRO DE LA FUNCIÓN Movimientos()
@@ -216,11 +276,10 @@ const Movimientos = () => {
         )}
       </nav>
 
-      {/* Contenido principal */}
       <main className="main-content">
         <div className="header-container">
           <h2>📦 Registro de Movimientos</h2>
-          <button className="btn-agregar" onClick={() => setModalOpen(true)}>
+          <button className="btn-agregar" onClick={() => abrirModal()}>
             <FaPlus /> Agregar Movimiento
           </button>
         </div>
@@ -239,20 +298,19 @@ const Movimientos = () => {
               </tr>
             </thead>
             <tbody>
-              {movimientos.map((mov) => (
-                <tr key={mov.id}>
-                  <td>{mov.tipo}</td>
+              {movimientosFiltrados.map((mov) => (
+                <tr key={mov.id_movimiento}>
+                  <td>{mov.tipo_movimiento}</td>
                   <td>{mov.producto}</td>
                   <td>{mov.cantidad}</td>
                   <td>{mov.empleado}</td>
-                  <td>{mov.fecha}</td>
-                  <td className="acciones">
-                    <button className="btn-accion editar">
+                  <td>{mov.fecha_movimiento}</td>
+                  <td>
+                    <button onClick={() => abrirModal(mov)}>
                       <FaEdit />
                     </button>
                     <button
-                      className="btn-accion eliminar"
-                      onClick={() => handleEliminar(mov.id)}
+                      onClick={() => eliminarMovimiento(mov.id_movimiento)}
                     >
                       <FaTrash />
                     </button>

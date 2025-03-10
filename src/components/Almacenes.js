@@ -27,31 +27,97 @@ import "../styles.css";
 
 const Almacenes = () => {
   const navigate = useNavigate();
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
+  // Estados
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
+  const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [mostrarOpciones, setMostrarOpciones] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [filtroNumero, setFiltroNumero] = useState("");
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroPrecio, setFiltroPrecio] = useState("");
 
+  const [productoForm, setProductoForm] = useState({
+    nombre: "",
+    descripcion: "",
+    categoria: "comic",
+    stock_actual: 0,
+    precio: 0,
+    editorial_o_marca: "",
+    fecha_lanzamiento: "",
+  });
+
   const [productos, setProductos] = useState([
     {
-      id: 111540,
-      nombre: "ACTUALIZACION EQUIPOS POSVENTA",
-      sucursal: "Mantenimiento y Garantías",
-      cantidad: 10,
-      precio: 500,
+      id_producto: 1,
+      nombre: "Spider-Man #1",
+      descripcion: "Edición limitada de Spider-Man",
+      categoria: "comic",
+      stock_actual: 15,
+      precio: 299.99,
+      editorial_o_marca: "Marvel",
+      fecha_lanzamiento: "2024-02-15",
     },
     {
-      id: 110616,
-      nombre: "ADMINISTRACIÓN",
-      sucursal: "CEDIS",
-      cantidad: 5,
-      precio: 800,
+      id_producto: 2,
+      nombre: "Figura de Batman",
+      descripcion: "Figura coleccionable edición especial",
+      categoria: "figura de colección",
+      stock_actual: 5,
+      precio: 799.99,
+      editorial_o_marca: "DC Comics",
+      fecha_lanzamiento: "2023-11-01",
     },
   ]);
+
+  // 🛒 Agregar Producto
+  const agregarProducto = () => {
+    if (!productoForm.nombre || productoForm.precio <= 0) {
+      alert("Completa los campos obligatorios.");
+      return;
+    }
+
+    setProductos([
+      ...productos,
+      { ...productoForm, id_producto: productos.length + 1 },
+    ]);
+
+    setProductoForm({
+      nombre: "",
+      descripcion: "",
+      categoria: "comic",
+      stock_actual: 0,
+      precio: 0,
+      editorial_o_marca: "",
+      fecha_lanzamiento: "",
+    });
+
+    setMostrarFormulario(false);
+  };
+
+  // ✏️ Editar Producto
+  const editarProducto = (id_producto) => {
+    const producto = productos.find((p) => p.id_producto === id_producto);
+    if (producto) {
+      setProductoForm(producto);
+      setMostrarFormulario(true);
+    }
+  };
+
+  // ❌ Eliminar Producto
+  const eliminarProducto = (id_producto) => {
+    if (window.confirm("¿Seguro que quieres eliminar este producto?")) {
+      setProductos(productos.filter((p) => p.id_producto !== id_producto));
+    }
+  };
+
+  // 🔍 Filtrar Productos
+  const productosFiltrados = productos.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleEditar = (id) => {
     navigate(`/editar-producto/${id}`);
@@ -241,184 +307,143 @@ const Almacenes = () => {
       </nav>
 
       {/* Contenido principal de Almacenes */}
-      <main className="main-content">
-        <div className="almacen-header">
-          <div className="almacen-title">
-            <FaBoxOpen className="header-icon" />
-            <h2>Almacén</h2>
-          </div>
+      {/* Encabezado */}
+      {/* Encabezado */}
+      <div className="almacen-header">
+        <h2>
+          <FaBoxOpen /> Gestión de Productos en Almacén
+        </h2>
+        <button
+          className="btn-agregar"
+          onClick={() => setMostrarFormulario(true)}
+        >
+          <FaPlus /> Agregar Producto
+        </button>
+      </div>
 
-          {/* Botones alineados a la derecha en la misma fila */}
-          <div className="almacen-actions">
-            <button className="btn btn-green" onClick={toggleFormulario}>
-              <FaPlus /> Agregar
-            </button>
-            {/* Botón "Más opciones" con submenú */}
-            <div className="menu-opciones-container">
-              <button className="btn btn-gray" onClick={toggleOpciones}>
-                <FaEllipsisV /> Más opciones
-              </button>
+      {/* Buscador */}
+      <div className="buscador">
+        <FaSearch className="icono-busqueda" />
+        <input
+          type="text"
+          placeholder="Buscar por nombre o descripción..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
-              {mostrarOpciones && (
-                <div className="submenu-opciones">
+      {/* Tabla */}
+      <div className="tabla-container">
+        <table className="productos-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Categoría</th>
+              <th>Stock</th>
+              <th>Precio</th>
+              <th>Marca/Editorial</th>
+              <th>Fecha de Lanzamiento</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productosFiltrados.map((p, index) => (
+              <tr key={p.id_producto}>
+                <td>{index + 1}</td>
+                <td>{p.nombre}</td>
+                <td>{p.descripcion}</td>
+                <td>{p.categoria}</td>
+                <td>{p.stock_actual}</td>
+                <td>${p.precio.toFixed(2)}</td>
+                <td>{p.editorial_o_marca || "N/A"}</td>
+                <td>{p.fecha_lanzamiento || "N/A"}</td>
+                <td>
                   <button
-                    className="btn-opcion"
-                    onClick={() => handleEditar(111540)}
+                    className="btn-editar"
+                    onClick={() => editarProducto(p.id_producto)}
                   >
-                    {" "}
-                    {/* Usa un ID dinámico */}
-                    <FaEdit /> Editar
+                    <FaEdit />
                   </button>
-                </div>
-              )}
-            </div>
-            <button className="btn btn-filter" onClick={toggleFiltros}>
-              <FaFilter /> Filtros
-            </button>
-          </div>
-        </div>
-
-        {/* Filtros desplegables en la misma página */}
-        {mostrarFiltros && (
-          <div className="filtro-container">
-            <table className="filtro-table">
-              <thead>
-                <tr>
-                  <th>
-                    <FaHashtag /> Número
-                  </th>
-                  <th>
-                    <FaSearch /> Nombre
-                  </th>
-                  <th>
-                    <FaDollarSign /> Precio
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <input
-                      type="text"
-                      placeholder="Folio"
-                      value={filtroNumero}
-                      onChange={(e) => setFiltroNumero(e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      placeholder="Nombre"
-                      value={filtroNombre}
-                      onChange={(e) => setFiltroNombre(e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      placeholder="Precio"
-                      value={filtroPrecio}
-                      onChange={(e) => setFiltroPrecio(e.target.value)}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tabla de almacenes con los resultados filtrados */}
-        <div className="almacen-table">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>Sucursal</th>
-                <th>Cantidad</th>
-                <th>Precio</th>
-                <th>Acciones</th>
+                  <button
+                    className="btn-eliminar"
+                    onClick={() => eliminarProducto(p.id_producto)}
+                  >
+                    <FaTrash />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {productos.map((producto) => (
-                <tr key={producto.id}>
-                  <td>{producto.id}</td>
-                  <td>{producto.nombre}</td>
-                  <td>{producto.sucursal}</td>
-                  <td>{producto.cantidad}</td>
-                  <td>${producto.precio}</td>
-                  <td>
-                    <button
-                      className="btn-edit"
-                      onClick={() =>
-                        navigate(`/editar-producto/${producto.id}`)
-                      }
-                    >
-                      <FaEdit /> Editar
-                    </button>
-                    <button className="btn-delete">
-                      <FaTrash /> Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        {mostrarFormulario && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h3>📦 Registrar Producto</h3>
-              <form>
-                <div className="form-group">
-                  <label>
-                    <FaBoxOpen /> Nombre del Producto:
-                  </label>
-                  <input type="text" placeholder="Ingrese el nombre" />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>
-                      <FaHome /> Sucursal:
-                    </label>
-                    <input type="text" placeholder="Ingrese la sucursal" />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <FaBoxOpen /> Cantidad:
-                    </label>
-                    <input type="number" placeholder="Ingrese la cantidad" />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FaFileInvoiceDollar /> Precio:
-                  </label>
-                  <input type="number" placeholder="Ingrese el precio" />
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-save">
-                    ✅ Guardar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-cancel"
-                    onClick={toggleFormulario}
-                  >
-                    ❌ Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
+      {/* Formulario de Registro y Edición */}
+      {mostrarFormulario && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>
+              {productoForm.id_producto ? "Editar Producto" : "Nuevo Producto"}
+            </h3>
+            <label>Nombre:</label>
+            <input
+              type="text"
+              value={productoForm.nombre}
+              onChange={(e) =>
+                setProductoForm({ ...productoForm, nombre: e.target.value })
+              }
+            />
+            <label>Descripción:</label>
+            <input
+              type="text"
+              value={productoForm.descripcion}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  descripcion: e.target.value,
+                })
+              }
+            />
+            <label>Categoría:</label>
+            <select
+              value={productoForm.categoria}
+              onChange={(e) =>
+                setProductoForm({ ...productoForm, categoria: e.target.value })
+              }
+            >
+              <option value="comic">Comic</option>
+              <option value="figura de colección">Figura de colección</option>
+            </select>
+            <label>Stock Actual:</label>
+            <input
+              type="number"
+              value={productoForm.stock_actual}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  stock_actual: Number(e.target.value),
+                })
+              }
+            />
+            <label>Precio:</label>
+            <input
+              type="number"
+              value={productoForm.precio}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  precio: Number(e.target.value),
+                })
+              }
+            />
+            <button onClick={agregarProducto}>Guardar</button>
+            <button onClick={() => setMostrarFormulario(false)}>
+              Cancelar
+            </button>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 };
