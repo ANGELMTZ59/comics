@@ -1,38 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { FaSearch, FaPlus, FaEye, FaCheck, FaTrash, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import {
-  FaHome,
-  FaShoppingCart,
-  FaBoxOpen,
-  FaTruck,
-  FaUsers,
-  FaChevronDown,
-  FaChevronUp,
-  FaPlus,
-  FaSearch,
-  FaEye,
-  FaCheck,
-  FaTrash,
-  FaBell,
-  FaUserCircle,
-  FaEnvelope,
-  FaSignOutAlt,
-} from "react-icons/fa";
-import "../styles.css";
+import axios from "axios";
+import "../styless.css";
+import Sidebar from "./sidebar"; // ✅ Importación del Sidebar
 
 const Notificaciones = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [notificaciones, setNotificaciones] = useState([]);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalAgregarVisible, setModalAgregarVisible] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
-
-  const localEmpleado = {
-    nombre: "Juan Pérez",
-    correo: "juanperez@example.com",
-  };
 
   const [notificacionForm, setNotificacionForm] = useState({
     id_cliente: "",
@@ -58,6 +36,7 @@ const Notificaciones = () => {
     setNotificaciones([
       {
         id: 1,
+        cliente: "Carlos López",
         asunto: "Promoción Especial",
         mensaje: "Aprovecha un 20% de descuento en tu próxima compra.",
         fecha: "2025-03-08",
@@ -65,6 +44,7 @@ const Notificaciones = () => {
       },
       {
         id: 2,
+        cliente: "María González",
         asunto: "Recordatorio de Pago",
         mensaje: "Tu membresía expira pronto, renueva ahora.",
         fecha: "2025-03-07",
@@ -72,6 +52,7 @@ const Notificaciones = () => {
       },
       {
         id: 3,
+        cliente: "Carlos López",
         asunto: "Nuevo Evento",
         mensaje: "Evento exclusivo para miembros este fin de semana.",
         fecha: "2025-03-06",
@@ -79,14 +60,6 @@ const Notificaciones = () => {
       },
     ]);
   }, []);
-
-  const toggleSubmenu = (menu) => {
-    setActiveSubmenu(activeSubmenu === menu ? null : menu);
-  };
-
-  const toggleMenuUsuario = () => {
-    setMenuUsuarioVisible(!menuUsuarioVisible);
-  };
 
   const markAsRead = (id) => {
     setNotificaciones(
@@ -98,29 +71,8 @@ const Notificaciones = () => {
     setNotificaciones(notificaciones.filter((n) => n.id !== id));
   };
 
-  // 🔹 Función para abrir el modal de crear notificación
-  const abrirModal = () => {
-    setNotificacionForm({
-      id_cliente: "",
-      id_promocion: "",
-      titulo: "",
-      mensaje: "",
-      leida: "no",
-    });
-    setModalVisible(true);
-  };
-
-  // 🔹 Función para cerrar el modal
-  const cerrarModal = () => {
-    setModalVisible(false);
-  };
-
   const guardarNotificacion = () => {
-    if (
-      !notificacionForm.id_cliente ||
-      !notificacionForm.titulo ||
-      !notificacionForm.mensaje
-    ) {
+    if (!notificacionForm.id_cliente || !notificacionForm.titulo || !notificacionForm.mensaje) {
       alert("Por favor, completa los campos obligatorios.");
       return;
     }
@@ -131,189 +83,29 @@ const Notificaciones = () => {
     );
 
     const nuevaNotificacion = {
-      id: notificaciones.length + 1, // Asegurar ID único
+      id: notificaciones.length + 1,
       cliente: clienteSeleccionado ? clienteSeleccionado.nombre : "Desconocido",
       asunto: notificacionForm.titulo,
       mensaje: notificacionForm.mensaje,
-      fecha: new Date().toISOString().split("T")[0], // Fecha actual
+      fecha: new Date().toISOString().split("T")[0],
       estado: "No leído",
     };
 
-    // Actualizar el estado asegurando la inmutabilidad
     setNotificaciones((prev) => [...prev, nuevaNotificacion]);
-
-    // Cerrar el modal
     setModalAgregarVisible(false);
-  };
-
-  const showDetails = (notification) => {
-    const cliente = clientes.find(
-      (c) => c.id_cliente === notification.id_cliente
-    );
-    setSelectedNotification({
-      ...notification,
-      clienteNombre: cliente ? cliente.nombre : "Desconocido",
-    });
-    setModalVisible(true);
-  };
-
-  const [modalAgregarVisible, setModalAgregarVisible] = useState(false);
-
-  const abrirModalAgregar = () => {
-    setNotificacionForm({
-      id_cliente: "",
-      id_promocion: "",
-      titulo: "",
-      mensaje: "",
-      leida: "no",
-    });
-    setModalAgregarVisible(true);
   };
 
   return (
     <div className="notificaciones-page">
-      <nav className="sidebar">
-        <div className="logo-container">
-          <img
-            src="/images/logo.png"
-            alt="Logo Comics Planet"
-            className="logo"
-          />
-          <h2 className="sidebar-title">Comics Planet</h2>
-        </div>
-        <ul className="sidebar-menu">
-          <li className="menu-item" onClick={() => navigate("/inicioempleado")}>
-            <FaHome className="icon" />
-            <span className="menu-text">Inicio</span>
-          </li>
-
-          {/* Menú desplegable de Clientes */}
-          <li className="menu-item" onClick={() => toggleSubmenu("clientes")}>
-            <div className="menu-button">
-              <FaShoppingCart className="icon" />
-              <span className="menu-text">Clientes</span>
-              {activeSubmenu === "clientes" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "clientes" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/clientes")}>Lista de Clientes</li>
-            <li onClick={() => navigate("/membresias")}>Membresías</li>
-            <li onClick={() => navigate("/notificaciones")}>Notificaciones</li>
-            <li onClick={() => navigate("/promociones")}>Promociones</li>
-          </ul>
-
-          {/* Menú de Inventarios */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("inventarios")}
-          >
-            <div className="menu-button">
-              <FaBoxOpen className="icon" />
-              <span className="menu-text">Inventarios</span>
-              {activeSubmenu === "inventarios" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "inventarios" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/almacenes")}>Almacenes</li>
-            <li onClick={() => navigate("/recepcion-de-mercancia")}>
-              Recepción de Mercancía
-            </li>
-            <li onClick={() => navigate("/movimientos")}>Movimientos</li>
-          </ul>
-
-          {/* Proveedores */}
-          <li
-            className="menu-item"
-            onClick={() => toggleSubmenu("proveedores")}
-          >
-            <div className="menu-button">
-              <FaTruck className="icon" />
-              <span className="menu-text">Proveedores</span>
-              {activeSubmenu === "proveedores" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "proveedores" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/gestion-proveedores")}>
-              Gestión de Proveedores
-            </li>
-            <li onClick={() => navigate("/ordenes-de-compra")}>
-              Órdenes de Compra
-            </li>
-          </ul>
-
-          {/* Gestión de Empleados */}
-          <li className="menu-item" onClick={() => toggleSubmenu("empleados")}>
-            <div className="menu-button">
-              <FaUsers className="icon" />
-              <span className="menu-text">Gestión de Empleados</span>
-              {activeSubmenu === "empleados" ? (
-                <FaChevronUp className="arrow-icon" />
-              ) : (
-                <FaChevronDown className="arrow-icon" />
-              )}
-            </div>
-          </li>
-          <ul
-            className={`submenu ${
-              activeSubmenu === "empleados" ? "visible" : ""
-            }`}
-          >
-            <li onClick={() => navigate("/gestion-empleados")}>Empleados</li>
-          </ul>
-        </ul>
-
-        {/* Avatar en la esquina inferior */}
-        <div className="user-profile" onClick={toggleMenuUsuario}>
-          <FaUserCircle className="user-avatar" />
-          <span className="user-name">{localEmpleado.nombre}</span>
-        </div>
-        {/* Menú desplegable del usuario */}
-        {menuUsuarioVisible && (
-          <div className={`user-menu ${menuUsuarioVisible ? "visible" : ""}`}>
-            <p>
-              <FaUserCircle /> {localEmpleado.nombre}
-            </p>
-            <p>
-              <FaEnvelope /> {localEmpleado.correo}
-            </p>
-            <button className="logout-button">
-              <FaSignOutAlt /> Cerrar sesión
-            </button>
-          </div>
-        )}
-      </nav>
-
+      <Sidebar /> {/* ✅ Sidebar importado y agregado */}
+      
       <div className="notificaciones-container">
         {/* Encabezado */}
         <div className="titulo-y-boton">
           <h2>
             <FaBell className="icono-titulo" /> Gestión de Notificaciones
           </h2>
-          <button className="btn-agregar" onClick={abrirModalAgregar}>
+          <button className="btn-agregar" onClick={() => setModalAgregarVisible(true)}>
             <FaPlus /> Crear Notificación
           </button>
         </div>
@@ -347,52 +139,29 @@ const Notificaciones = () => {
               {notificaciones
                 .filter(
                   (n) =>
-                    (n.cliente
-                      ? n.cliente
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase())
-                      : false) ||
-                    (n.asunto
-                      ? n.asunto
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase())
-                      : false)
+                    (n.cliente ? n.cliente.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+                    (n.asunto ? n.asunto.toLowerCase().includes(searchTerm.toLowerCase()) : false)
                 )
                 .map((n, index) => (
                   <tr key={n.id}>
                     <td>{index + 1}</td>
                     <td>{n.cliente || "Desconocido"}</td>
                     <td>{n.asunto || "Sin Asunto"}</td>
-                    <td className="mensaje-columna">
-                      {n.mensaje || "Sin Mensaje"}
-                    </td>
+                    <td className="mensaje-columna">{n.mensaje || "Sin Mensaje"}</td>
                     <td>{n.fecha || "Sin Fecha"}</td>
                     <td>
-                      <span
-                        className={`estado ${
-                          n.estado ? n.estado.toLowerCase() : "no-leido"
-                        }`}
-                      >
+                      <span className={`estado ${n.estado ? n.estado.toLowerCase() : "no-leido"}`}>
                         {n.estado || "No leído"}
                       </span>
                     </td>
                     <td className="acciones">
-                      <button
-                        className="btn-ver"
-                        onClick={() => showDetails(n)}
-                      >
+                      <button className="btn-ver">
                         <FaEye />
                       </button>
-                      <button
-                        className="btn-leido"
-                        onClick={() => markAsRead(n.id)}
-                      >
+                      <button className="btn-leido" onClick={() => markAsRead(n.id)}>
                         <FaCheck />
                       </button>
-                      <button
-                        className="btn-eliminar"
-                        onClick={() => deleteNotification(n.id)}
-                      >
+                      <button className="btn-eliminar" onClick={() => deleteNotification(n.id)}>
                         <FaTrash />
                       </button>
                     </td>
@@ -469,10 +238,7 @@ const Notificaciones = () => {
             <button className="btn-guardar" onClick={guardarNotificacion}>
               Guardar
             </button>
-            <button
-              className="btn-cerrar"
-              onClick={() => setModalAgregarVisible(false)}
-            >
+            <button className="btn-cerrar" onClick={() => setModalAgregarVisible(false)}>
               Cerrar
             </button>
           </div>

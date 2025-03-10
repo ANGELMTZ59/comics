@@ -957,422 +957,132 @@ body {
 
 
 
-/* ------------ MEMBRESIAS.CSS ------------ */
-/* Ajustar el contenedor principal para que no lo tape la barra lateral */
-.membresias-container {
-    width: calc(100% - 260px); /* Se ajusta al espacio disponible restando el sidebar */
-    margin-left: 260px; /* Asegura que comience después del sidebar */
-    padding: 20px;
-    transition: margin-left 0.3s ease-in-out;
-}
 
-/* Si el sidebar está colapsado */
-.sidebar.collapsed + .membresias-container {
-    margin-left: 80px;
-    width: calc(100% - 80px);
-}
 
-/* Título y Botón */
-.titulo-y-boton {
+
+
+
+
+
+
+/*--------------MODALES------------------/*
+/* 📌 Modal */
+.modal {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-/* Botón Agregar Membresía */
-.btn-agregar {
-    background-color: #28a745;
-    color: white;
-    padding: 12px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    transition: background 0.3s;
-    min-width: 180px;
     justify-content: center;
-}
-
-.btn-agregar:hover {
-    background-color: #218838;
-}
-
-/* Estilos de la tabla */
-.tabla-container {
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+/* 📌 Contenedor del contenido del modal */
+.modal-content {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 15px;
-    overflow-x: auto;
-    max-width: 1000px;
-}
-
-.membresias-table {
-    width: 100%;
-    border-collapse: collapse;
+    width: 400px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     text-align: center;
+    position: relative;
 }
 
-.membresias-table th {
-    background-color: #2c3e50;
-    color: white;
-    font-weight: bold;
-    padding: 10px;
-    font-size: 15px;
-    border-bottom: 3px solid #1a252f;
-}
-
-.membresias-table td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    font-size: 14px;
-}
-
-/* Botones de acción */
-.acciones {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-
-.btn-ver,
-.btn-editar,
-.btn-eliminar {
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Colores de los botones */
-.btn-ver {
-    background-color: #17a2b8;
-    color: white;
-}
-
-.btn-editar {
-    background-color: #007bff;
-    color: white;
-}
-
-.btn-eliminar {
-    background-color: #dc3545;
-    color: white;
-}
-
-/* Iconos dentro de los botones */
-.btn-ver svg,
-.btn-editar svg,
-.btn-eliminar svg {
-    font-size: 16px;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    .membresias-container {
-        width: 100%;
-        margin-left: 0;
-        
-    }
-
-    .titulo-y-boton {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .tabla-container {
-        width: 95%;
-        padding: 15px;
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ------------ NOTIFICACIONES.CSS ------------ */
-/* Contenedor principal */
-/* Contenedor principal */
-.notificaciones-container {
-    width: calc(100% - 260px);
-    margin-left: 260px;
-    padding: 20px;
-}
-
-/* Encabezado con Botón */
-.titulo-y-boton {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
-}
-
-.titulo-y-boton h2 {
+/* 📌 Título del modal */
+.modal-content h3 {
     font-size: 22px;
     font-weight: bold;
-    color: #2c3e50;
-    margin: 0;
-}
-
-/* Botón Crear Notificación */
-.btn-agregar {
-    background-color: #28a745;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background 0.3s, transform 0.2s;
-}
-
-.btn-agregar:hover {
-    background-color: #218838;
-    transform: scale(1.05);
-}
-
-
-
-/* Contenedor de la tabla */
-.tabla-container {
-    width: 100%;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 20px;
-    overflow-x: auto;
-    max-width: 1200px;
-}
-
-/* Tabla */
-.notificaciones-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-}
-
-.notificaciones-table th {
-    background-color: #2c3e50;
-    color: white;
-    font-weight: bold;
-    padding: 14px;
-    font-size: 16px;
-    border-bottom: 3px solid #1a252f;
-}
-
-.notificaciones-table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-    font-size: 15px;
-}
-
-/* Mejora en las filas de Cliente */
-.notificaciones-table td strong {
-    font-size: 15px;
-    color: #2c3e50;
-}
-
-.notificaciones-table td small {
-    color: #777;
-    font-size: 13px;
-}
-
-/* Estado de notificación */
-.estado.no-leído {
-    color: red;
-    font-weight: bold;
-}
-
-.estado.leído {
-    color: green;
-    font-weight: bold;
-}
-
-/* Botones de Acción */
-.acciones {
-    display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: center;
 }
 
-.btn-ver {
-    background-color: #17a2b8;
-    color: white;
-}
-
-.btn-leido {
-    background-color: #28a745;
-    color: white;
-}
-
-.btn-eliminar {
-    background-color: #dc3545;
-    color: white;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ------------ Promociones.CSS ------------ */
-/* 📌 Ajuste del contenedor de la tabla */
-.contenedor-tabla {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-/* 📌 Estilo de la tabla */
-.tabla-container {
-    width: 85%;
-    max-width: 1100px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 15px;
-    margin-top: 10px;
-    overflow-x: auto;
-}
-
-/* 📌 Ajuste de la tabla de promociones */
-.promociones-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-    font-size: 14px;
-}
-
-/* 📌 Ajuste de las celdas */
-.promociones-table th,
-.promociones-table td {
+/* 📌 Campos de entrada en el modal */
+.modal-form input {
+    width: 80%;
     padding: 10px;
-    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
 }
 
-/* 📌 Reducir el ancho de la descripción */
-.descripcion-columna {
-    max-width: 250px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* 📌 Estado de promociones */
-.estado-activa {
-    color: green;
-    font-weight: bold;
-}
-
-.estado-inactiva {
-    color: red;
-    font-weight: bold;
-}
-
-/* 📌 Estilos de botones */
-.btn-toggle {
-    background-color: #007bff;
-    color: white;
-    padding: 6px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-editar {
-    background-color: #28a745;
-    color: white;
-    padding: 6px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-eliminar {
-    background-color: #dc3545;
-    color: white;
-    padding: 6px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-/* 📌 Estilos del encabezado */
-.encabezado {
+/* 📌 Botones del modal */
+.modal-buttons {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    width: 85%;
-    max-width: 1100px;
-    margin: auto;
+    gap: 10px;
 }
 
-/* 📌 Ajuste del botón "Agregar Promoción" */
-.btn-agregar {
+.btn-guardar {
     background-color: #28a745;
     color: white;
-    padding: 8px 15px;
     border: none;
-    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 16px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
+    border-radius: 5px;
+    flex: 1;
 }
 
-.btn-agregar:hover {
+.btn-cerrar {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    flex: 1;
+}
+
+.btn-guardar:hover {
     background-color: #218838;
 }
 
-
-/* 📌 Responsive */
-@media (max-width: 768px) {
-    .tabla-container {
-        width: 100%;
-        padding: 10px;
-    }
+.btn-cerrar:hover {
+    background-color: #c82333;
 }
+
+/* 📌 Botón de cierre del modal */
+.modal .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #dc3545;
+}
+
+.modal .close-button:hover {
+    color: #c82333;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
