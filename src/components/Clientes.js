@@ -216,7 +216,7 @@ const Clientes = () => {
       </nav>
 
       <div className="clientes-container">
-        {/* Sección de encabezado con título y botones */}
+        {/* Título y botones */}
         <div className="header-clientes">
           <h2>📜 Gestión de Clientes</h2>
           <div className="botones-clientes">
@@ -229,7 +229,7 @@ const Clientes = () => {
           </div>
         </div>
 
-        {/* Buscador */}
+        {/* Barra de búsqueda */}
         <div className="buscador">
           <FaSearch className="icono-busqueda" />
           <input
@@ -240,7 +240,7 @@ const Clientes = () => {
           />
         </div>
 
-        {/* Tabla */}
+        {/* Tabla de clientes */}
         <div className="tabla-container">
           <table className="clientes-table">
             <thead>

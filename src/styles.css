@@ -779,206 +779,162 @@ body {
 
 
 /* ------------ CLIENTES.CSS ------------ */
-/* 📌 Contenedor principal de la página de clientes */
-.clientes-page {
-    display: flex;
-    min-height: 100vh;
-    width: 100%;
-    overflow: hidden; /* Evita que el contenido se desborde */
-}
-
-/* 📌 Contenido principal alineado correctamente */
-.clientes-main {
-    flex-grow: 1;
-    margin-left: 330px; /* Ajustado al ancho del sidebar */
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: calc(100% - 270px);
+/* Contenedor principal */
+.clientes-container {
+    width: calc(100% - 260px); /* Se ajusta al espacio disponible restando el ancho del sidebar */
+    margin-left: 260px; /* Asegura que comience después del sidebar */
+    padding: 20px;
     transition: margin-left 0.3s ease-in-out;
-    overflow-x: auto; /* Permite scroll horizontal si el contenido se desborda */
-    align-items: center; /* Centra la tabla */
 }
 
-/* 📌 Ajuste cuando el sidebar está colapsado */
-@media (max-width: 1024px) {
-    .clientes-main {
-        margin-left: 70px;
-        width: calc(100% - 70px);
-    }
-}
-
-/* 📌 Contenedor del título y botón */
-.header-container {
+/* Encabezado con botones */
+.header-clientes {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    max-width: 1200px;
-    background: white;
-    padding: 15px 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
-/* 📌 Estilo del título */
-.titulo-clientes {
+/* Botones */
+.botones-clientes {
     display: flex;
-    align-items: center;
     gap: 10px;
-    font-size: 22px;
-    font-weight: bold;
 }
 
-/* 📌 Botón de agregar cliente */
-.btn-agregar {
+.btn-agregar,
+.btn-exportar {
     background-color: #28a745;
     color: white;
+    padding: 10px 15px;
     border: none;
-    padding: 12px 20px;
-    font-size: 16px;
+    border-radius: 6px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.3s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    font-size: 14px;
+    transition: background 0.3s;
 }
 
-.btn-agregar:hover {
+.btn-exportar {
     background-color: #218838;
 }
-/* 📌 Estilo para la tabla */
+
+.btn-agregar:hover,
+.btn-exportar:hover {
+    background-color: #1e7e34;
+}
+
+/* Barra de búsqueda */
+.buscador {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.buscador input {
+    border: none;
+    outline: none;
+    padding: 8px;
+    width: 100%;
+    font-size: 14px;
+}
+
+.icono-busqueda {
+    margin-right: 10px;
+    color: #555;
+}
+
+/* Tabla */
+.tabla-container {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
+    padding: 10px;
+    overflow-x: auto;
+}
+
 .clientes-table {
     width: 100%;
-    max-width: 1100px;
     border-collapse: collapse;
-    table-layout: auto; /* Permite ajuste dinámico */
-    white-space: nowrap; /* Evita saltos de línea no deseados */
-    background: white; /* Color de fondo de la tabla */
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
-}
-
-/* 📌 Estilo de encabezado */
-.clientes-table th {
-    background-color: #343a40; /* Color oscuro */
-    color: white;
-    padding: 14px;
     text-align: center;
-    font-size: 18px;
+    table-layout: fixed;
 }
 
-/* 📌 Celdas de la tabla */
+.clientes-table th,
 .clientes-table td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
-    text-align: center;
-    font-size: 16px;
-    vertical-align: middle; /* Asegura que el texto se alinee correctamente */
-    background: white; /* Fondo blanco */
+    font-size: 14px;
 }
 
-/* 📌 Alternar colores en filas para mejorar lectura */
-.clientes-table tbody tr:nth-child(even) {
-    background: #f8f9fa; /* Color de fondo para filas pares */
-}
-
-/* 📌 Hover en filas */
-.clientes-table tbody tr:hover {
-    background: #e9ecef; /* Color más claro al pasar el mouse */
-}
-
-/* 📌 Evitar sobreposición de contenido */
-.clientes-table td {
-    word-break: keep-all;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Agrega "..." si el texto es demasiado largo */
-    max-width: 200px;
-}
-
-/* 📌 Ajuste de columnas */
-.clientes-table td:nth-child(2), /* Nombre */
-.clientes-table td:nth-child(3), /* Email */
-.clientes-table td:nth-child(4), /* Teléfono */
-.clientes-table td:nth-child(5) /* Dirección */ {
-    min-width: 150px;
-}
-
-/* 📌 Teléfono en una sola línea */
-.clientes-table td:nth-child(4) {
-    white-space: nowrap;
-}
-
-/* 📌 Scroll horizontal sin romper la estructura */
-@media (max-width: 768px) {
-    .clientes-container {
-        overflow-x: auto;
-        display: block;
-    }
-
-    .clientes-table {
-        min-width: 900px;
-    }
-}
-
-
-/* 📌 Columna de Membresías con colores */
-.membresia.gold {
-    color: #ffd700;
+.clientes-table th {
+    background-color: #2c3e50;
+    color: white;
     font-weight: bold;
+    font-size: 15px;
+    border-bottom: 3px solid #1a252f;
 }
 
-.membresia.silver {
-    color: #c0c0c0;
-    font-weight: bold;
-}
-
-.membresia.bronze {
-    color: #cd7f32;
-    font-weight: bold;
-}
-
-/* 📌 Botones de acciones */
+/* Estilos de los botones de acción */
 .acciones {
     display: flex;
+    gap: 5px;
     justify-content: center;
-    gap: 10px;
 }
 
-.btn-editar, .btn-eliminar {
-    background: none;
+.btn-editar,
+.btn-eliminar {
     border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-editar {
-    color: #007bff;
-}
-
-.btn-editar:hover {
-    color: #0056b3;
+    background-color: #007bff;
+    color: white;
 }
 
 .btn-eliminar {
-    color: #dc3545;
+    background-color: #dc3545;
+    color: white;
 }
 
-.btn-eliminar:hover {
-    color: #c82333;
-}
-
-/* 📌 Scroll horizontal en pantallas pequeñas sin comprimir la tabla */
-@media (max-width: 768px) {
+/* Responsivo */
+@media (max-width: 1024px) {
     .clientes-container {
-        overflow-x: auto;
-        display: block;
+        width: 100%;
+        margin-left: 0; /* Para que en pantallas pequeñas el sidebar no lo tape */
+    }
+    .header-clientes {
+        flex-direction: column;
+        align-items: center;
     }
 
-    .clientes-table {
-        min-width: 900px; /* Evita que la tabla se haga muy pequeña */
+    .botones-clientes {
+        flex-direction: column;
+        width: 100%;
     }
+
+    .tabla-container {
+        width: 100%;
+    }
+}
+
+/* Cuando la barra lateral está colapsada */
+.sidebar.collapsed + .clientes-container {
+    margin-left: 80px; /* Ajustar si la barra lateral se hace más pequeña */
+    width: calc(100% - 80px);
 }
