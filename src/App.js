@@ -16,6 +16,7 @@ import Clientes from "./components/Clientes";
 import Membresias from "./components/Membresias";
 import Notificaciones from "./components/Notificaciones";
 import Promociones from "./components/Promociones";
+import Login from "./components/Login";
 
 function App() {
   const [empleado, setEmpleado] = useState(null);
@@ -24,12 +25,19 @@ function App() {
     <Router>
       <Routes>
         {/* Redirección automática de "/" a "/inicioempleado" */}
-        <Route path="/" element={<Navigate to="/inicioempleado" />} />
-        
+        <Route path="/" element={<Navigate to="/Login" />} />
+
         <Route path="/register-employee" element={<RegisterEmployee />} />
-        <Route path="/inicioempleado" element={<InicioEmpleado setEmpleado={setEmpleado} />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/inicioempleado"
+          element={<InicioEmpleado setEmpleado={setEmpleado} />}
+        />
         <Route path="/almacenes" element={<Almacenes />} />
-        <Route path="/recepcion-de-mercancia" element={<RecepcionMercancia />} />
+        <Route
+          path="/recepcion-de-mercancia"
+          element={<RecepcionMercancia />}
+        />
         <Route path="/editar-producto/:id" element={<EditarProducto />} />
         <Route path="/gestion-proveedores" element={<GestionProveedores />} />
         <Route path="/agregar-proveedor" element={<AgregarProveedor />} />
@@ -39,15 +47,15 @@ function App() {
         <Route path="/membresias" element={<Membresias />} />
         <Route path="/notificaciones" element={<Notificaciones />} />
         <Route path="/promociones" element={<Promociones />} />
-        <Route 
-          path="/gestion-empleados" 
+        <Route
+          path="/gestion-empleados"
           element={
             empleado?.rol === "Administrador" ? (
               <GestionEmpleados empleado={empleado} />
             ) : (
               <Navigate to="/inicioempleado" />
             )
-          } 
+          }
         />
       </Routes>
     </Router>
