@@ -1,23 +1,22 @@
-import React, { useState } from "react";
-import { FaSearch, FaPlus, FaFileExcel, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import {
+  FaSearch,
+  FaPlus,
+  FaFileExcel,
+  FaEdit,
+  FaTrash,
+  FaTimes,
+} from "react-icons/fa";
 import * as XLSX from "xlsx";
+import axios from "axios";
 import "../styles.css";
 import Sidebar from "./sidebar";
 
+const API_URL = "http://localhost:5000/api"; // Asegúrate de que esta URL coincida con tu servidor
+
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [clientes, setClientes] = useState([
-    {
-      id_cliente: 1,
-      nombre: "Carlos López",
-      email: "carlos@example.com",
-      telefono: "555-1234",
-      direccion: "Av. Central 123",
-      fecha_registro: "2024-01-15",
-      nivel_membresia: "Gold",
-    },
-  ]);
-
+  const [clientes, setClientes] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
 
@@ -29,6 +28,32 @@ const Clientes = () => {
     nivel_membresia: "regular",
     frecuencia_compra: "baja",
   });
+
+  // 📌 Cargar clientes desde la BD
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/clientes");
+        console.log("🔍 Respuesta de API clientes:", response.data);
+
+        if (response.data.success && response.data.clientes.length > 0) {
+          setClientes(response.data.clientes);
+          console.log(
+            "✅ Clientes guardados en estado:",
+            response.data.clientes
+          );
+        } else {
+          console.warn("⚠ No se encontraron clientes en la API");
+          setClientes([]); // Evitar que se quede con datos antiguos
+        }
+      } catch (error) {
+        console.error("❌ Error al obtener clientes:", error);
+        setClientes([]);
+      }
+    };
+
+    fetchClientes();
+  }, []);
 
   const abrirModalAgregar = () => {
     setEditingClient(null);
@@ -60,33 +85,92 @@ const Clientes = () => {
     setModalVisible(false);
   };
 
-  const guardarCliente = () => {
-    if (!clienteForm.nombre || !clienteForm.email || !clienteForm.telefono || !clienteForm.direccion) {
-      alert("Por favor, completa todos los campos.");
+  // ✅ Guardar cliente (Nuevo o Editado)
+  const guardarCliente = async () => {
+    if (
+      !clienteForm.nombre ||
+      !clienteForm.email ||
+      !clienteForm.telefono ||
+      !clienteForm.direccion
+    ) {
+      alert("⚠️ Por favor, completa todos los campos.");
       return;
     }
 
-    if (editingClient) {
-      setClientes(
-        clientes.map((c) => (c.id_cliente === editingClient.id_cliente ? { ...c, ...clienteForm } : c))
+    try {
+      if (editingClient) {
+        // Si estamos editando, enviamos una petición PUT al servidor
+        const response = await axios.put(
+          `${API_URL}/clientes/${editingClient.id_cliente}`,
+          clienteForm
+        );
+
+        if (response.data.success) {
+          setClientes(
+            clientes.map((c) =>
+              c.id_cliente === editingClient.id_cliente
+                ? { ...c, ...clienteForm }
+                : c
+            )
+          );
+          alert("✅ Cliente actualizado correctamente");
+        } else {
+          alert("❌ Error al actualizar el cliente");
+        }
+      } else {
+        // Si es un nuevo cliente, enviamos una petición POST para agregarlo
+        const response = await axios.post(`${API_URL}/clientes`, clienteForm);
+
+        if (response.data.success) {
+          setClientes([...clientes, response.data.cliente]);
+          alert("✅ Cliente agregado correctamente");
+        } else {
+          alert("❌ Error al agregar el cliente");
+        }
+      }
+
+      cerrarModal();
+    } catch (error) {
+      console.error("❌ Error al guardar cliente:", error);
+      alert("❌ Error en el servidor");
+    }
+  };
+
+  // 🗑 Eliminar cliente
+  const eliminarCliente = async (id_cliente) => {
+    if (
+      !window.confirm("¿Estás seguro de que quieres eliminar este cliente?")
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/clientes/${id_cliente}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        }
       );
-    } else {
-      const id_cliente = clientes.length + 1;
-      setClientes([
-        ...clientes,
-        { ...clienteForm, id_cliente, fecha_registro: new Date().toISOString().split("T")[0] },
-      ]);
-    }
 
-    cerrarModal();
+      const data = await response.json();
+
+      if (data.success) {
+        // 🔹 Eliminar cliente del estado local
+        setClientes(
+          clientes.filter((cliente) => cliente.id_cliente !== id_cliente)
+        );
+        alert("✅ Cliente eliminado correctamente");
+      } else {
+        alert("❌ Error al eliminar el cliente");
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar cliente:", error);
+      alert("❌ Error en el servidor");
+    }
   };
 
-  const eliminarCliente = (id_cliente) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este cliente?")) {
-      setClientes(clientes.filter((cliente) => cliente.id_cliente !== id_cliente));
-    }
-  };
-
+  // 📥 Exportar a Excel
   const exportarExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(clientes);
     const workbook = XLSX.utils.book_new();
@@ -135,32 +219,52 @@ const Clientes = () => {
             </tr>
           </thead>
           <tbody>
-            {clientes
-              .filter((cliente) =>
-                [cliente.nombre, cliente.email, cliente.nivel_membresia].some((campo) =>
-                  campo.toLowerCase().includes(searchTerm.toLowerCase())
+            {clientes && clientes.length > 0 ? (
+              clientes
+                .filter((cliente) =>
+                  [cliente.nombre, cliente.email, cliente.nivel_membresia]
+                    .filter(Boolean) // 🔹 Evita errores si alguna clave es null
+                    .some((campo) =>
+                      campo.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
                 )
-              )
-              .map((cliente, index) => (
-                <tr key={cliente.id_cliente}>
-                  <td>{index + 1}</td>
-                  <td>{cliente.nombre}</td>
-                  <td>{cliente.email}</td>
-                  <td>{cliente.telefono}</td>
-                  <td>{cliente.direccion}</td>
-                  <td>{cliente.fecha_registro}</td>
-                  <td>{cliente.nivel_membresia}</td>
-                  <td>{cliente.frecuencia_compra}</td>
-                  <td className="acciones">
-                    <button className="btn-editar" onClick={() => abrirModalEditar(cliente)}>
-                      <FaEdit />
-                    </button>
-                    <button className="btn-eliminar" onClick={() => eliminarCliente(cliente.id_cliente)}>
-                      <FaTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                .map((cliente, index) => (
+                  <tr key={cliente.id_cliente}>
+                    <td>{index + 1}</td>
+                    <td>{cliente.nombre || "No disponible"}</td>
+                    <td>{cliente.email || "Sin email"}</td>
+                    <td>{cliente.telefono || "Sin teléfono"}</td>
+                    <td>{cliente.direccion || "Sin dirección"}</td>
+                    <td>
+                      {cliente.fecha_registro
+                        ? new Date(cliente.fecha_registro).toLocaleDateString(
+                            "es-MX"
+                          )
+                        : "Sin registro"}
+                    </td>
+                    <td>{cliente.nivel_membresia || "Sin nivel"}</td>
+                    <td>{cliente.frecuencia_compra || "Desconocida"}</td>
+                    <td className="acciones">
+                      <button
+                        className="btn-editar"
+                        onClick={() => abrirModalEditar(cliente)}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => eliminarCliente(cliente.id_cliente)}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+            ) : (
+              <tr>
+                <td colSpan="9">⚠ No hay clientes disponibles</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -170,14 +274,46 @@ const Clientes = () => {
           <div className="modal-content">
             <h3>{editingClient ? "Editar Cliente" : "Agregar Cliente"}</h3>
             <div className="modal-form">
-              <input type="text" placeholder="Nombre" value={clienteForm.nombre} onChange={(e) => setClienteForm({ ...clienteForm, nombre: e.target.value })} />
-              <input type="email" placeholder="Email" value={clienteForm.email} onChange={(e) => setClienteForm({ ...clienteForm, email: e.target.value })} />
-              <input type="text" placeholder="Teléfono" value={clienteForm.telefono} onChange={(e) => setClienteForm({ ...clienteForm, telefono: e.target.value })} />
-              <input type="text" placeholder="Dirección" value={clienteForm.direccion} onChange={(e) => setClienteForm({ ...clienteForm, direccion: e.target.value })} />
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={clienteForm.nombre}
+                onChange={(e) =>
+                  setClienteForm({ ...clienteForm, nombre: e.target.value })
+                }
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={clienteForm.email}
+                onChange={(e) =>
+                  setClienteForm({ ...clienteForm, email: e.target.value })
+                }
+              />
+              <input
+                type="text"
+                placeholder="Teléfono"
+                value={clienteForm.telefono}
+                onChange={(e) =>
+                  setClienteForm({ ...clienteForm, telefono: e.target.value })
+                }
+              />
+              <input
+                type="text"
+                placeholder="Dirección"
+                value={clienteForm.direccion}
+                onChange={(e) =>
+                  setClienteForm({ ...clienteForm, direccion: e.target.value })
+                }
+              />
             </div>
             <div className="modal-buttons">
-              <button className="btn-guardar" onClick={guardarCliente}>Guardar</button>
-              <button className="btn-cerrar" onClick={cerrarModal}><FaTimes /> Cerrar</button>
+              <button className="btn-guardar" onClick={guardarCliente}>
+                Guardar
+              </button>
+              <button className="btn-cerrar" onClick={cerrarModal}>
+                <FaTimes /> Cerrar
+              </button>
             </div>
           </div>
         </div>

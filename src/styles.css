@@ -745,9 +745,97 @@ body {
     color: #c82333;
 }
 
+/* Botones */
+.btn-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  .editar-button, .guardar-button, .cancelar-button {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .editar-button {
+    background: #007bff;
+    color: white;
+    border: none;
+  }
+  
+  .editar-button:hover {
+    background: #0056b3;
+    transform: scale(1.05);
+  }
+  
+  .guardar-button {
+    background: #28a745;
+    color: white;
+    border: none;
+  }
+  
+  .guardar-button:hover {
+    background: #218838;
+    transform: scale(1.05);
+  }
+  
+  .cancelar-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+  }
+  
+  .cancelar-button:hover {
+    background: #c82333;
+    transform: scale(1.05);
+  }
 
-
-
+  .input-edit {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  select.input-edit {
+    background-color: white;
+    cursor: pointer;
+  }
+  
+  .guardar-button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  
+  .cancelar-button {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .guardar-button:hover {
+    background-color: #218838;
+  }
+  
+  .cancelar-button:hover {
+    background-color: #c82333;
+  }
+  
 
 
 

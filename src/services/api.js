@@ -1,8 +1,35 @@
-// src/services/api.js
-import axios from 'axios';
+import axios from "axios";
 
-const api = axios.create({
-  baseURL: 'http://localhost:4000/api' // Asegúrate de actualizar esta URL con la de tu API
-});
+const API_URL = "http://localhost:5000/api"; // Cambia esto si usas otro backend
 
-export default api;
+// Función para iniciar sesión
+export const login = async (email, password) => {
+  try {
+    const response = await axios.post(`${API_URL}/login`, { email, password });
+    if (response.data.success) {
+      localStorage.setItem("token", response.data.token); // Guardar token
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Error al iniciar sesión:", error);
+    return { success: false, error: "Error en el servidor" };
+  }
+};
+
+// Función para obtener datos del usuario autenticado
+export const getUserData = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener datos del usuario:", error);
+    return null;
+  }
+};
+
+// Función para cerrar sesión (eliminar token)
+export const logout = () => {
+  localStorage.removeItem("token");
+};

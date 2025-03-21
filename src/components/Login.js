@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
+import { login } from "../services/api";
 import "../styles.css"; // Asegúrate de que el archivo esté correctamente nombrado e importado.
 
 const Login = () => {
@@ -7,23 +8,14 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    // Simulación de datos de usuario permitidos (esto luego se reemplaza por la base de datos)
-    const fakeUser = {
-      email: "admin@example.com",
-      password: "123456",
-    };
-
-    // Validación de credenciales
-    if (email === fakeUser.email && password === fakeUser.password) {
-      alert("Inicio de sesión exitoso");
-      setError(""); // Borrar error si existe
-      localStorage.setItem("isAuthenticated", "true"); // Guardar estado de autenticación
-      window.location.href = "/inicioempleado"; // Redireccionar
+    const response = await login(email, password);
+    if (response.token) {
+      localStorage.setItem("token", response.token);
+      window.location.href = "/inicioempleado"; // Redirige al dashboard
     } else {
-      setError("Correo o contraseña incorrectos.");
+      setError(response.error || "Credenciales incorrectas");
     }
   };
 
@@ -40,31 +32,31 @@ const Login = () => {
 
         {error && <p className="error-message">{error}</p>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLogin}>
+          {" "}
+          {/* Asegúrate de que aquí llame a handleLogin */}
           <div className="input-group">
             <FaEnvelope className="icon" />
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Correo"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-
           <div className="input-group">
             <FaLock className="icon" />
             <input
               type="password"
-              placeholder="Enter your password"
+              placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-
           <button type="submit" className="btn-login">
-            Sign In
+            Iniciar Sesión
           </button>
         </form>
       </div>
