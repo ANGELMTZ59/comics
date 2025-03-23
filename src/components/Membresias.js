@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from "react";
-import {
-  FaSearch,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaEye,
-  FaCrown,
-} from "react-icons/fa";
+import { FaSearch, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 import "../styles.css";
 import Sidebar from "./sidebar";
 
-const API_URL = "http://localhost:5000/api"; // ❌ Si está en 8000, cambia a 5000
+const API_URL = "http://localhost:5000/api";
 
 const Membresias = () => {
   const [clientes, setClientes] = useState([]);
-  const [membresias, setMembresias] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMembresia, setEditingMembresia] = useState(null);
@@ -28,35 +20,32 @@ const Membresias = () => {
     beneficios: "",
   });
 
-  const filteredMembresias = membresias.filter((membresia) =>
+  const filteredClientes = clientes.filter((cliente) =>
     [
-      membresia.nombre_cliente || "",
-      membresia.email || "",
-      membresia.nivel || "",
+      cliente.nombre_cliente || "",
+      cliente.email || "",
+      cliente.nivel_membresia || "",
     ].some((campo) => campo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // 🔄 Cargar Clientes y Membresías desde la BD
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/clientes_membresias")
-      .then((response) => {
-        console.log("📋 Datos recibidos desde la API:", response.data);
+  // 🔄 Obtener todos los clientes con membresía
+  const recargarClientesConMembresias = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/clientes_membresias`);
+      if (Array.isArray(response.data)) {
+        setClientes(response.data);
+        console.log("📦 Clientes actualizados:", response.data);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener clientes:", error);
+    }
+  };
 
-        if (response.data && Array.isArray(response.data)) {
-          setClientes(response.data);
-        } else {
-          console.warn("⚠ La API no devolvió un array válido.");
-          setClientes([]);
-        }
-      })
-      .catch((error) => {
-        console.error("❌ Error al obtener los datos:", error);
-        setClientes([]);
-      });
+  useEffect(() => {
+    recargarClientesConMembresias();
   }, []);
 
-  // 🟢 Abrir Modal para Agregar Membresía
+  // 🟢 Abrir modal de agregar
   const abrirModalAgregar = () => {
     setEditingMembresia(null);
     setMembresiaForm({
@@ -69,95 +58,96 @@ const Membresias = () => {
     setModalVisible(true);
   };
 
-  // 🟢 Abrir Modal para Editar Membresía
-  const abrirModalEditar = (membresia) => {
-    console.log("🛠 Intentando editar membresía:", membresia);
-
-    if (!membresia.id_membresia) {
-      console.error("🚨 Error: La membresía no tiene un ID válido", membresia);
-      alert(
-        "Error: No se puede editar esta membresía porque no tiene un ID válido."
-      );
+  // 🟢 Abrir modal de editar
+  const abrirModalEditar = (cliente) => {
+    if (!cliente.id_membresia) {
+      alert("⚠️ Este cliente aún no tiene membresía para editar.");
       return;
     }
 
-    setEditingMembresia(membresia);
+    setEditingMembresia(cliente);
     setMembresiaForm({
-      id_membresia: membresia.id_membresia, // 🟢 Asegura que se pase el ID de membresía
-      id_cliente: membresia.id_cliente || "",
-      nivel: membresia.nivel || "regular",
-      fecha_inicio: membresia.fecha_inicio
-        ? membresia.fecha_inicio.split("T")[0]
-        : "",
-      fecha_fin: membresia.fecha_fin ? membresia.fecha_fin.split("T")[0] : "",
-      beneficios: membresia.beneficios || "",
+      id_membresia: cliente.id_membresia,
+      id_cliente: cliente.id_cliente,
+      nivel: cliente.nivel_membresia || "regular",
+      fecha_inicio: cliente.fecha_inicio?.split("T")[0] || "",
+      fecha_fin: cliente.fecha_fin?.split("T")[0] || "",
+      beneficios: cliente.beneficios || "",
     });
-
-    console.log("📌 ID de membresía en formulario:", membresia.id_membresia);
     setModalVisible(true);
   };
 
-  // 🔴 Cerrar Modal
   const cerrarModal = () => {
     setModalVisible(false);
   };
 
-  // ✅ Guardar Membresía (Agregar o Editar)
+  // ✅ Guardar membresía (agregar o editar)
   const guardarMembresia = async () => {
-    if (
-      !membresiaForm.id_cliente ||
-      !membresiaForm.fecha_inicio ||
-      !membresiaForm.fecha_fin
-    ) {
-      alert("Completa todos los campos.");
+    const { id_cliente, fecha_inicio, fecha_fin } = membresiaForm;
+
+    if (!id_cliente || !fecha_inicio || !fecha_fin) {
+      alert("Completa todos los campos obligatorios.");
       return;
     }
 
     try {
       if (editingMembresia && membresiaForm.id_membresia) {
-        console.log(
-          `✏️ Actualizando membresía ID: ${membresiaForm.id_membresia}`
-        );
         await axios.put(
           `${API_URL}/membresias/${membresiaForm.id_membresia}`,
           membresiaForm
         );
       } else {
-        console.log("➕ Creando nueva membresía...");
         await axios.post(`${API_URL}/membresias`, membresiaForm);
       }
 
-      const response = await axios.get(`${API_URL}/membresias`);
-      setMembresias(response.data);
+      await recargarClientesConMembresias();
       cerrarModal();
     } catch (error) {
       console.error("❌ Error al guardar membresía:", error);
+      alert("Hubo un error al guardar la membresía.");
     }
   };
 
+  // ❌ Eliminar membresía
   // ❌ Eliminar Membresía
   const eliminarMembresia = async (id_membresia) => {
-    if (window.confirm("¿Seguro que quieres eliminar esta membresía?")) {
-      try {
-        await axios.delete(`${API_URL}/membresias/${id_membresia}`);
-        setMembresias(
-          membresias.filter((m) => m.id_membresia !== id_membresia)
-        );
-      } catch (error) {
-        console.error("❌ Error al eliminar membresía:", error);
-      }
+    if (!id_membresia) {
+      console.error("❌ No se puede eliminar: ID de membresía no válido");
+      return;
     }
-  };
 
-  const verMembresia = (membresia) => {
-    alert(`
-      Cliente: ${membresia.nombre_cliente}
-      Email: ${membresia.email}
-      Nivel: ${membresia.nivel}
-      Inicio: ${new Date(membresia.fecha_inicio).toLocaleDateString()}
-      Vencimiento: ${new Date(membresia.fecha_fin).toLocaleDateString()}
-      Beneficios: ${membresia.beneficios}
-    `);
+    if (
+      !window.confirm("¿Estás seguro de que quieres eliminar esta membresía?")
+    ) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/membresias/${id_membresia}`);
+
+      // 🧼 Limpiar manualmente la membresía del cliente en el estado local
+      setClientes((prevClientes) =>
+        prevClientes.map((c) =>
+          c.id_membresia === id_membresia
+            ? {
+                ...c,
+                id_membresia: null,
+                nivel_membresia: "Sin membresía",
+                fecha_inicio: null,
+                fecha_fin: null,
+                beneficios: "Sin beneficios",
+              }
+            : c
+        )
+      );
+
+      // ✅ Asegúrate también de recargar desde la BD por si hay cambios externos
+      await recargarClientesConMembresias();
+
+      alert("✅ Membresía eliminada correctamente");
+    } catch (error) {
+      console.error("❌ Error al eliminar membresía:", error);
+    }
   };
 
   return (
@@ -194,13 +184,13 @@ const Membresias = () => {
             </tr>
           </thead>
           <tbody>
-            {clientes.length > 0 ? (
-              clientes.map((cliente, index) => (
+            {filteredClientes.length > 0 ? (
+              filteredClientes.map((cliente, index) => (
                 <tr key={cliente.id_cliente}>
                   <td>{index + 1}</td>
-                  <td>{cliente.nombre_cliente || "No disponible"}</td>
+                  <td>{cliente.nombre_cliente}</td>
                   <td>{cliente.email}</td>
-                  <td>{cliente.nivel_membresia}</td>
+                  <td>{cliente.nivel_membresia || "Sin membresía"}</td>
                   <td>
                     {cliente.fecha_inicio
                       ? new Date(cliente.fecha_inicio).toLocaleDateString()
@@ -220,7 +210,7 @@ const Membresias = () => {
                     </button>
                     <button
                       className="btn-eliminar"
-                      onClick={() => eliminarMembresia(cliente.id_cliente)}
+                      onClick={() => eliminarMembresia(cliente.id_membresia)}
                     >
                       <FaTrash />
                     </button>
@@ -229,9 +219,7 @@ const Membresias = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" style={{ textAlign: "center" }}>
-                  No hay clientes registrados
-                </td>
+                <td colSpan="7">No hay clientes registrados</td>
               </tr>
             )}
           </tbody>
@@ -246,11 +234,11 @@ const Membresias = () => {
             </h3>
 
             <div className="modal-form">
-              {/* Selección de Cliente */}
+              {/* Cliente */}
               <div className="input-group">
                 <label>Cliente</label>
                 <select
-                  value={membresiaForm.id_cliente || ""}
+                  value={membresiaForm.id_cliente}
                   onChange={(e) =>
                     setMembresiaForm({
                       ...membresiaForm,
@@ -258,26 +246,18 @@ const Membresias = () => {
                     })
                   }
                 >
-                  <option value="">Seleccione un Cliente</option>
-                  {clientes.length > 0 ? (
-                    clientes.map((cliente) => (
-                      <option
-                        key={cliente.id_cliente}
-                        value={cliente.id_cliente}
-                      >
-                        {cliente.nombre_cliente} ({cliente.email}) -{" "}
-                        {cliente.nivel_membresia}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">No hay clientes disponibles</option>
-                  )}
+                  <option value="">Seleccione un cliente</option>
+                  {clientes.map((c) => (
+                    <option key={c.id_cliente} value={c.id_cliente}>
+                      {c.nombre_cliente} ({c.email})
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Nivel de Membresía */}
+              {/* Nivel */}
               <div className="input-group">
-                <label>Nivel de Membresía</label>
+                <label>Nivel</label>
                 <select
                   value={membresiaForm.nivel}
                   onChange={(e) =>
@@ -293,9 +273,9 @@ const Membresias = () => {
                 </select>
               </div>
 
-              {/* Fechas de Inicio y Vencimiento */}
+              {/* Fechas */}
               <div className="input-group">
-                <label>Fecha de Inicio</label>
+                <label>Fecha Inicio</label>
                 <input
                   type="date"
                   value={membresiaForm.fecha_inicio}
@@ -309,7 +289,7 @@ const Membresias = () => {
               </div>
 
               <div className="input-group">
-                <label>Fecha de Vencimiento</label>
+                <label>Fecha Fin</label>
                 <input
                   type="date"
                   value={membresiaForm.fecha_fin}
@@ -322,7 +302,6 @@ const Membresias = () => {
                 />
               </div>
 
-              {/* Beneficios */}
               <div className="input-group">
                 <label>Beneficios</label>
                 <textarea
@@ -342,7 +321,7 @@ const Membresias = () => {
                 Guardar
               </button>
               <button className="btn-cerrar" onClick={cerrarModal}>
-                Cerrar
+                Cancelar
               </button>
             </div>
           </div>

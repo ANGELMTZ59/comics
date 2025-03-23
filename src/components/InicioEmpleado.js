@@ -16,24 +16,28 @@ const InicioEmpleado = ({ setEmpleado }) => {
 
   useEffect(() => {
     const fetchEmpleado = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       try {
-        const response = await axios.get(`${API_URL}/empleado`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const token = localStorage.getItem("token");
 
-        console.log("📊 Datos recibidos del backend:", response.data);
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const response = await axios.get(
+          "http://localhost:5000/api/empleado",
+          config
+        );
 
         if (response.data.success) {
-          setLocalEmpleado(response.data.empleado);
-          setEmpleadoEditado(response.data.empleado);
-        } else {
-          console.warn("⚠ No se encontró información del empleado");
+          setLocalEmpleado(response.data.empleado); // ✅ Guarda el empleado
+          setEmpleadoEditado({
+            nombre: response.data.empleado.nombre_usuario,
+            email: response.data.empleado.email,
+            telefono: response.data.empleado.telefono,
+            puesto: response.data.empleado.puesto,
+          });
         }
       } catch (error) {
         console.error("❌ Error al obtener el empleado:", error);
@@ -54,6 +58,18 @@ const InicioEmpleado = ({ setEmpleado }) => {
       }
     };
 
+    const InicioEmpleado = () => {
+      const [localEmpleado, setLocalEmpleado] = useState(null); // AQUÍ sí se puede
+      const [empleadoEditado, setEmpleadoEditado] = useState({
+        nombre: "",
+        email: "",
+        telefono: "",
+        puesto: "",
+      });
+
+      // ... tus funciones fetchEmpleado y demás van aquí ...
+    };
+
     fetchEmpleado();
     fetchPuestos();
   }, [navigate]);
@@ -70,45 +86,41 @@ const InicioEmpleado = ({ setEmpleado }) => {
 
   const handleEditar = () => {
     setEditando(true);
+    setEmpleadoEditado({ ...localEmpleado });
   };
 
   const handleChange = (e) => {
-    setEmpleadoEditado({
-      ...empleadoEditado,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setEmpleadoEditado((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleGuardar = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("No tienes permisos para editar.");
+      if (!localEmpleado || !localEmpleado.id_empleado) {
+        alert("❌ No se encontró el ID del empleado.");
         return;
       }
 
       const response = await axios.put(
-        `${API_URL}/empleado/${empleadoEditado.id_empleado}`, // ✅ Se usa el ID en la URL
-        {
-          email: empleadoEditado.email,
-          puesto: empleadoEditado.puesto,
-          telefono: empleadoEditado.telefono,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `http://localhost:5000/api/empleado/${localEmpleado.id_empleado}`,
+        empleadoEditado
       );
 
       if (response.data.success) {
-        setLocalEmpleado(empleadoEditado);
+        alert("✅ Información actualizada correctamente");
         setEditando(false);
-        alert("✅ Cambios guardados correctamente");
+        setLocalEmpleado((prev) => ({
+          ...prev,
+          ...empleadoEditado,
+        }));
       } else {
-        alert("❌ Error al actualizar los datos");
+        alert("❌ Ocurrió un error al actualizar");
       }
     } catch (error) {
       console.error("❌ Error al guardar:", error);
-      alert("❌ Error en el servidor");
     }
   };
 
@@ -124,8 +136,18 @@ const InicioEmpleado = ({ setEmpleado }) => {
           </h2>
           <div className="perfil-detalle">
             <div className="perfil-item">
-              <strong>Nombre:</strong>{" "}
-              {localEmpleado?.nombre_usuario || "No disponible"}
+              <strong>Nombre:</strong>
+              {editando ? (
+                <input
+                  type="text"
+                  name="nombre"
+                  value={empleadoEditado.nombre}
+                  onChange={handleChange}
+                  className="input-edit"
+                />
+              ) : (
+                localEmpleado.nombre_usuario
+              )}
             </div>
 
             <div className="perfil-item">

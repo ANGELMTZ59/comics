@@ -36,15 +36,15 @@ const Clientes = () => {
         const response = await axios.get("http://localhost:5000/api/clientes");
         console.log("🔍 Respuesta de API clientes:", response.data);
 
-        if (response.data.success && response.data.clientes.length > 0) {
+        if (response.data.success && Array.isArray(response.data.clientes)) {
           setClientes(response.data.clientes);
           console.log(
             "✅ Clientes guardados en estado:",
             response.data.clientes
           );
         } else {
-          console.warn("⚠ No se encontraron clientes en la API");
-          setClientes([]); // Evitar que se quede con datos antiguos
+          console.warn("⚠ No se encontraron clientes válidos en la API");
+          setClientes([]); // Limpia el estado si la respuesta no es válida
         }
       } catch (error) {
         console.error("❌ Error al obtener clientes:", error);
@@ -52,8 +52,8 @@ const Clientes = () => {
       }
     };
 
-    fetchClientes();
-  }, []);
+    fetchClientes(); // ✅ Aquí llamamos a la función
+  }, []); // ✅ El arreglo vacío indica que solo se ejecuta una vez al montar
 
   const abrirModalAgregar = () => {
     setEditingClient(null);
@@ -80,6 +80,16 @@ const Clientes = () => {
     });
     setModalVisible(true);
   };
+
+  const [clienteEditado, setClienteEditado] = useState({
+    id_cliente: "",
+    nombre: "",
+    email: "",
+    telefono: "",
+    direccion: "",
+    nivel_membresia: "",
+    frecuencia_compra: "",
+  });
 
   const cerrarModal = () => {
     setModalVisible(false);
@@ -133,6 +143,23 @@ const Clientes = () => {
     } catch (error) {
       console.error("❌ Error al guardar cliente:", error);
       alert("❌ Error en el servidor");
+    }
+  };
+
+  const editarCliente = async () => {
+    if (!clienteEditado.id_cliente) {
+      alert("Cliente no tiene un ID válido");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:5000/api/clientes/${clienteEditado.id_cliente}`,
+        clienteEditado
+      );
+      alert("✅ Cliente editado correctamente");
+    } catch (error) {
+      console.error("❌ Error al guardar cliente:", error);
     }
   };
 
