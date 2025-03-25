@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import {
   FaFilter,
   FaSearch,
@@ -9,12 +8,17 @@ import {
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
-import Sidebar from "./sidebar"; // ✅ Importamos el sidebar
+import axios from "axios";
+import Sidebar from "./sidebar";
 import "../mercancia.css";
 
+const API_URL = "http://localhost:5000/api";
+
 const RecepcionMercancia = () => {
-  const navigate = useNavigate();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarFiltros, setMostrarFiltros] = useState(true);
+  const [productos, setProductos] = useState([]);
+
   const [nuevaRecepcion, setNuevaRecepcion] = useState({
     numero: "",
     proveedor: "",
@@ -29,50 +33,43 @@ const RecepcionMercancia = () => {
     total: "",
   });
 
+  // 🟢 Obtener datos al cargar
+  useEffect(() => {
+    obtenerRecepciones();
+  }, []);
+
+  const obtenerRecepciones = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/recepciones`);
+      if (res.data.success) {
+        setProductos(res.data.recepciones);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener recepciones:", error);
+    }
+  };
+
   const handleChange = (e) => {
     setNuevaRecepcion({ ...nuevaRecepcion, [e.target.name]: e.target.value });
   };
 
-  const handleGuardar = () => {
-    console.log("Nueva Recepción:", nuevaRecepcion);
-    setMostrarFormulario(false);
+  const handleGuardar = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/recepciones`, nuevaRecepcion);
+      if (res.data.success) {
+        obtenerRecepciones();
+        setMostrarFormulario(false);
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar recepción:", error);
+    }
   };
-
-  const [mostrarFiltros, setMostrarFiltros] = useState(true);
-  const [productos, setProductos] = useState([
-    {
-      numero: "1001",
-      proveedor: "Marvel Comics",
-      almacen: "Bodega Norte",
-      fechaRecepcion: "2025-03-01",
-      fechaDocumento: "2025-02-28",
-      numDocumento: "DOC-789",
-      tipoProducto: "Comics",
-      cantidad: 50,
-      marca: "Marvel",
-      estatus: "Recibido",
-      total: "$1,200",
-    },
-    {
-      numero: "1002",
-      proveedor: "Hasbro",
-      almacen: "Bodega Sur",
-      fechaRecepcion: "2025-03-02",
-      fechaDocumento: "2025-02-27",
-      numDocumento: "DOC-790",
-      tipoProducto: "Muñecos de Acción",
-      cantidad: 30,
-      marca: "Hasbro",
-      estatus: "Pendiente",
-      total: "$900",
-    },
-  ]);
 
   return (
     <div className="recepcion-page">
-      <Sidebar /> {/* ✅ Sidebar importado */}
+      <Sidebar />
 
-      {/* Formulario emergente (modal) */}
+      {/* Modal */}
       {mostrarFormulario && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -98,8 +95,16 @@ const RecepcionMercancia = () => {
                 placeholder="Almacén"
                 onChange={handleChange}
               />
-              <input type="date" name="fechaRecepcion" onChange={handleChange} />
-              <input type="date" name="fechaDocumento" onChange={handleChange} />
+              <input
+                type="date"
+                name="fechaRecepcion"
+                onChange={handleChange}
+              />
+              <input
+                type="date"
+                name="fechaDocumento"
+                onChange={handleChange}
+              />
               <input
                 type="text"
                 name="numDocumento"
@@ -117,19 +122,32 @@ const RecepcionMercancia = () => {
                 placeholder="Cantidad"
                 onChange={handleChange}
               />
-              <input type="text" name="marca" placeholder="Marca" onChange={handleChange} />
+              <input
+                type="text"
+                name="marca"
+                placeholder="Marca"
+                onChange={handleChange}
+              />
               <select name="estatus" onChange={handleChange}>
                 <option value="">Seleccionar estatus</option>
                 <option value="Recibido">Recibido</option>
                 <option value="Pendiente">Pendiente</option>
               </select>
-              <input type="text" name="total" placeholder="Total" onChange={handleChange} />
+              <input
+                type="text"
+                name="total"
+                placeholder="Total"
+                onChange={handleChange}
+              />
             </div>
             <div className="modal-footer">
               <button className="btn-guardar" onClick={handleGuardar}>
                 <FaPlus /> Guardar
               </button>
-              <button className="btn-cerrar" onClick={() => setMostrarFormulario(false)}>
+              <button
+                className="btn-cerrar"
+                onClick={() => setMostrarFormulario(false)}
+              >
                 <FaTimes /> Cancelar
               </button>
             </div>
@@ -145,15 +163,21 @@ const RecepcionMercancia = () => {
             <h2>Recepciones de Mercancía</h2>
           </div>
           <div className="header-actions">
-            <button className="btn-agregar" onClick={() => setMostrarFormulario(true)}>
+            <button
+              className="btn-agregar"
+              onClick={() => setMostrarFormulario(true)}
+            >
               <FaPlus /> Agregar
             </button>
           </div>
         </div>
 
-        {/* Barra de Filtros */}
+        {/* Filtros */}
         <div className="filtro-container">
-          <div className="filtro-header" onClick={() => setMostrarFiltros(!mostrarFiltros)}>
+          <div
+            className="filtro-header"
+            onClick={() => setMostrarFiltros(!mostrarFiltros)}
+          >
             <div className="filtro-title">
               <FaFilter className="filtro-icon" />
               <h3>Filtros</h3>
@@ -166,25 +190,34 @@ const RecepcionMercancia = () => {
           {mostrarFiltros && (
             <>
               <div className="filtro-content">
-                <input type="date" name="fechaCreacion" placeholder="Fecha de Creación" />
-                <input type="text" name="numeroDocumento" placeholder="Número de Documento" />
-                <input type="text" name="palabraClave" placeholder="Palabra Clave (Comics, Muñecos, etc.)" />
+                <input
+                  type="date"
+                  name="fechaCreacion"
+                  placeholder="Fecha de Creación"
+                />
+                <input
+                  type="text"
+                  name="numeroDocumento"
+                  placeholder="Número de Documento"
+                />
+                <input
+                  type="text"
+                  name="palabraClave"
+                  placeholder="Palabra Clave"
+                />
                 <select name="tipoProducto">
                   <option value="">Seleccionar tipo</option>
                   <option value="Comics">Comics</option>
                   <option value="Figuras">Figuras</option>
-                  <option value="Posters">Posters</option>
                 </select>
                 <select name="estatus">
                   <option value="">Seleccionar estatus</option>
                   <option value="Recibido">Recibido</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="En camino">En camino</option>
                 </select>
                 <input type="text" name="proveedor" placeholder="Proveedor" />
                 <input type="text" name="almacen" placeholder="Almacén" />
               </div>
-
               <div className="filtro-actions">
                 <button className="btn-buscar">
                   <FaSearch /> Buscar
@@ -194,7 +227,7 @@ const RecepcionMercancia = () => {
           )}
         </div>
 
-        {/* Tabla de Recepción */}
+        {/* Tabla */}
         <div className="almacen-table">
           <table>
             <thead>

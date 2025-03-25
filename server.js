@@ -886,6 +886,45 @@ app.get("/api/ordenesproveedor", (req, res) => {
 });
 
 /* ------------------------------------- */
+/* 🔹 GESTION RECEPCION DE MERCANCIA     */
+/* ------------------------------------- */
+
+// Obtener recepciones
+app.get("/api/recepciones", (req, res) => {
+  db.query("SELECT * FROM recepcionesmercancia", (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true, recepciones: results });
+  });
+});
+
+// Agregar recepción
+app.post("/api/recepciones", (req, res) => {
+  const recepcion = req.body;
+  const sql = `INSERT INTO recepcionesmercancia 
+  (numero, proveedor, almacen, fechaRecepcion, fechaDocumento, numDocumento, tipoProducto, cantidad, marca, estatus, total)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  const valores = [
+    recepcion.numero,
+    recepcion.proveedor,
+    recepcion.almacen,
+    recepcion.fechaRecepcion,
+    recepcion.fechaDocumento,
+    recepcion.numDocumento,
+    recepcion.tipoProducto,
+    recepcion.cantidad,
+    recepcion.marca,
+    recepcion.estatus,
+    recepcion.total,
+  ];
+
+  db.query(sql, valores, (err, result) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true, insertId: result.insertId });
+  });
+});
+
+/* ------------------------------------- */
 /* 🔹 INICIAR SERVIDOR                  */
 /* ------------------------------------- */
 const PORT = 5000;
