@@ -1,50 +1,52 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaClipboardList
-} from "react-icons/fa";
-import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { FaPlus, FaEdit, FaTrash, FaClipboardList } from "react-icons/fa";
+import Sidebar from "./sidebar";
 import "../ordenesCompra.css";
 
-const OrdenesCompra = () => {
-  const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [ordenes, setOrdenes] = useState([
-    {
-      id: 1,
-      producto: "Cómic Batman #100",
-      cantidad: 20,
-      proveedor: "Editorial DC",
-      estado: "Pendiente",
-      fecha: "2025-03-06",
-    },
-    {
-      id: 2,
-      producto: "Manga One Piece Vol. 50",
-      cantidad: 15,
-      proveedor: "Editorial Shueisha",
-      estado: "Procesada",
-      fecha: "2025-03-04",
-    },
-  ]);
+const API_URL = "http://localhost:5000/api";
 
-  const handleEliminar = (id) => {
-    const confirmacion = window.confirm(
-      "¿Seguro que deseas eliminar esta orden de compra?"
-    );
-    if (confirmacion) {
-      setOrdenes(ordenes.filter((orden) => orden.id !== id));
+const OrdenesCompra = () => {
+  const [ordenes, setOrdenes] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // 🔄 Obtener órdenes desde la BD
+  const fetchOrdenes = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/ordenesproveedor`);
+      if (response.data.success) {
+        setOrdenes(response.data.ordenes);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener órdenes:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrdenes();
+  }, []);
+
+  // ❌ Eliminar orden
+  const handleEliminar = async (id_orden) => {
+    const confirmar = window.confirm("¿Seguro que deseas eliminar esta orden?");
+    if (!confirmar) return;
+
+    try {
+      const response = await axios.delete(
+        `${API_URL}/ordenesproveedor/${id_orden}`
+      );
+      if (response.data.success) {
+        fetchOrdenes(); // recargar órdenes
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar orden:", error);
     }
   };
 
   return (
     <div className="ordenes-compra-page">
-      <Sidebar /> {/* ✅ Se muestra el sidebar importado */}
+      <Sidebar />
 
-      {/* Contenido principal */}
       <main className="main-content">
         <div className="ordenes-header">
           <h2>
@@ -70,17 +72,20 @@ const OrdenesCompra = () => {
             </thead>
             <tbody>
               {ordenes.map((orden) => (
-                <tr key={orden.id}>
+                <tr key={orden.id_orden}>
                   <td>{orden.producto}</td>
                   <td>{orden.cantidad}</td>
                   <td>{orden.proveedor}</td>
                   <td>{orden.estado}</td>
-                  <td>{orden.fecha}</td>
+                  <td>{orden.fecha_entrega_real || "Pendiente"}</td>
                   <td className="acciones">
                     <button className="btn-editar">
                       <FaEdit />
                     </button>
-                    <button className="btn-eliminar" onClick={() => handleEliminar(orden.id)}>
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => handleEliminar(orden.id_orden)}
+                    >
                       <FaTrash />
                     </button>
                   </td>

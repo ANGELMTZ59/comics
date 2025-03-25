@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { FaTrash, FaPlus, FaEdit, FaTimes, FaUser, FaPhone, FaMapMarkerAlt, FaClipboardList, FaEnvelope } from "react-icons/fa";
-import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
+import axios from "axios"; // Asegúrate de tener axios instalado
+import {
+  FaTrash,
+  FaPlus,
+  FaEdit,
+  FaTimes,
+  FaUser,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaClipboardList,
+  FaEnvelope,
+} from "react-icons/fa";
+import Sidebar from "./sidebar";
 import "../proveedores.css";
 
 const GestionProveedores = () => {
@@ -16,33 +27,18 @@ const GestionProveedores = () => {
     direccion: "",
   });
 
+  // ✅ Conexión real con base de datos
   useEffect(() => {
-    setProveedores([
-      {
-        id_proveedor: 1,
-        nombre: "Marvel Comics",
-        email: "contacto@marvel.com",
-        telefono: "555-1234",
-        direccion: "Av. Superhéroes 123",
-        fecha_ultimo_abastecimiento: "2025-02-20",
-      },
-      {
-        id_proveedor: 2,
-        nombre: "DC Comics",
-        email: "contacto@dc.com",
-        telefono: "555-5678",
-        direccion: "Gotham 456",
-        fecha_ultimo_abastecimiento: "2025-02-22",
-      },
-      {
-        id_proveedor: 3,
-        nombre: "Hasbro",
-        email: "ventas@hasbro.com",
-        telefono: "555-9876",
-        direccion: "Juguetes 789",
-        fecha_ultimo_abastecimiento: "2025-02-25",
-      },
-    ]);
+    axios
+      .get("http://localhost:5000/api/proveedores")
+      .then((res) => {
+        if (res.data.success) {
+          setProveedores(res.data.proveedores);
+        }
+      })
+      .catch((err) => {
+        console.error("❌ Error al cargar proveedores:", err);
+      });
   }, []);
 
   const handleChange = (e) => {
@@ -51,14 +47,7 @@ const GestionProveedores = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setProveedores([
-      ...proveedores,
-      {
-        ...nuevoProveedor,
-        id_proveedor: proveedores.length + 1,
-        fecha_ultimo_abastecimiento: "N/A",
-      },
-    ]);
+    // Aquí puedes hacer un POST si deseas guardarlo en la BD
     setModalOpen(false);
     setNuevoProveedor({ nombre: "", email: "", telefono: "", direccion: "" });
   };
@@ -70,13 +59,6 @@ const GestionProveedores = () => {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    setProveedores(
-      proveedores.map((p) =>
-        p.id_proveedor === proveedorSeleccionado.id_proveedor
-          ? proveedorSeleccionado
-          : p
-      )
-    );
     setEditModalOpen(false);
   };
 
@@ -95,47 +77,13 @@ const GestionProveedores = () => {
 
   return (
     <div className="proveedores-page">
-      <Sidebar /> {/* ✅ Sidebar importado */}
-
+      <Sidebar />
       <div className="proveedores-header">
         <h2>📋 Gestión de Proveedores</h2>
         <button className="btn-agregar" onClick={() => setModalOpen(true)}>
           <FaPlus /> Agregar Proveedor
         </button>
       </div>
-
-      {/* Modal para agregar proveedor */}
-      {modalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="close-modal" onClick={() => setModalOpen(false)}>
-              <FaTimes />
-            </button>
-            <h2>
-              <FaClipboardList className="form-icon" /> Agregar Proveedor
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="input-group">
-                <FaUser className="input-icon" />
-                <input type="text" name="nombre" placeholder="Nombre" onChange={handleChange} required />
-              </div>
-              <div className="input-group">
-                <FaEnvelope className="input-icon" />
-                <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
-              </div>
-              <div className="input-group">
-                <FaPhone className="input-icon" />
-                <input type="text" name="telefono" placeholder="Teléfono" onChange={handleChange} required />
-              </div>
-              <div className="input-group">
-                <FaMapMarkerAlt className="input-icon" />
-                <input type="text" name="direccion" placeholder="Dirección" onChange={handleChange} required />
-              </div>
-              <button type="submit" className="btn-registrar">Registrar Proveedor</button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Tabla de proveedores */}
       <div className="table-wrapper">
@@ -160,12 +108,22 @@ const GestionProveedores = () => {
                   <td>{proveedor.email}</td>
                   <td>{proveedor.telefono}</td>
                   <td>{proveedor.direccion}</td>
-                  <td>{proveedor.fecha_ultimo_abastecimiento || "N/A"}</td>
+                  <td>
+                    {proveedor.fecha_ultimo_abastecimiento
+                      ? proveedor.fecha_ultimo_abastecimiento.split(" ")[0]
+                      : "N/A"}
+                  </td>
                   <td className="acciones">
-                    <button className="btn-accion editar" onClick={() => handleEditClick(proveedor)}>
+                    <button
+                      className="btn-accion editar"
+                      onClick={() => handleEditClick(proveedor)}
+                    >
                       <FaEdit />
                     </button>
-                    <button className="btn-accion eliminar" onClick={() => eliminarProveedor(proveedor.id_proveedor)}>
+                    <button
+                      className="btn-accion eliminar"
+                      onClick={() => eliminarProveedor(proveedor.id_proveedor)}
+                    >
                       <FaTrash />
                     </button>
                   </td>

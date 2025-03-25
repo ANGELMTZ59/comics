@@ -85,39 +85,52 @@ app.get("/api/puestos", (req, res) => {
 // ✅ Inicio de sesión con validación de contraseña
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ success: false, message: "Faltan datos" });
+  console.log("📨 Email recibido:", email);
+  console.log("📨 Password recibido:", password);
 
   const sql = `
-    SELECT id_usuario, email, contraseña, activo, nombre, puesto
-    FROM usuarios
-    WHERE email = ?
+    SELECT id_usuario, email, contraseña AS password, activo, nombre, puesto
+FROM usuarios
+WHERE email = ?
+
   `;
 
   db.query(sql, [email], async (err, results) => {
-    if (err)
+    if (err) {
+      console.log("❌ Error en query:", err);
       return res
         .status(500)
         .json({ success: false, message: "Error en la base de datos" });
+    }
 
-    if (results.length === 0)
+    if (results.length === 0) {
+      console.log("❌ Usuario no encontrado con ese correo");
       return res
         .status(401)
         .json({ success: false, message: "Usuario no encontrado" });
+    }
 
     const usuario = results[0];
+    console.log("✅ Usuario encontrado:", usuario);
 
-    if (usuario.activo !== "si")
+    if (usuario.activo !== "si") {
+      console.log("⚠ Usuario inactivo");
       return res
         .status(403)
         .json({ success: false, message: "Cuenta inactiva" });
+    }
 
     try {
-      const validPassword = await bcrypt.compare(password, usuario.contraseña);
-      if (!validPassword)
+      const validPassword = await bcrypt.compare(password, usuario.password);
+
+      console.log("🔐 Contraseña válida:", validPassword);
+
+      if (!validPassword) {
+        console.log("❌ Contraseña incorrecta");
         return res
           .status(401)
           .json({ success: false, message: "Contraseña incorrecta" });
+      }
 
       const token = jwt.sign(
         {
@@ -132,11 +145,8 @@ app.post("/api/login", (req, res) => {
 
       res.json({ success: true, token, usuario });
     } catch (error) {
-      console.error("❌ Error al verificar contraseña:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error interno al verificar la contraseña",
-      });
+      console.log("❌ Error interno:", error);
+      res.status(500).json({ success: false, message: "Error interno" });
     }
   });
 });
@@ -282,7 +292,23 @@ app.post("/api/clientes", (req, res) => {
           .status(500)
           .json({ success: false, message: "Error en la BD" });
 
-      res.json({ success: true, message: "Cliente agregado correctamente" });
+      const id = result.insertId;
+      const sqlGet = "SELECT * FROM clientes WHERE id_cliente = ?";
+
+      db.query(sqlGet, [id], (err2, clienteResult) => {
+        if (err2) {
+          return res.status(500).json({
+            success: false,
+            message: "Error al obtener cliente insertado",
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Cliente agregado correctamente",
+          cliente: clienteResult[0],
+        });
+      });
     }
   );
 });
@@ -471,6 +497,391 @@ app.delete("/api/membresias/:id", (req, res) => {
         });
       });
     });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 4. GESTIÓN DE NOTIFICACIONES       */
+/* ------------------------------------- */
+
+app.get("/api/notificaciones", (req, res) => {
+  const sql = `
+    SELECT 
+      n.id_notificacion,
+      n.id_cliente,
+      c.nombre AS nombre_cliente,
+      n.titulo,
+      n.mensaje,
+      n.fecha_envio,
+      n.leida
+    FROM notificacionesclientes n
+    LEFT JOIN clientes c ON n.id_cliente = c.id_cliente
+    ORDER BY n.fecha_envio DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener notificaciones:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error en la base de datos" });
+    }
+
+    res.json({ success: true, notificaciones: results });
+  });
+});
+
+app.post("/api/notificaciones", (req, res) => {
+  const { id_cliente, id_promocion, titulo, mensaje, fecha_envio } = req.body;
+
+  if (!id_cliente || !titulo || !mensaje || !fecha_envio) {
+    return res.status(400).json({ success: false, message: "Faltan campos" });
+  }
+
+  const sql = `INSERT INTO notificaciones (id_cliente, id_promocion, titulo, mensaje, fecha_envio, leida)
+               VALUES (?, ?, ?, ?, ?, 'no')`;
+
+  db.query(
+    sql,
+    [id_cliente, id_promocion || null, titulo, mensaje, fecha_envio],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al insertar notificación:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Error en la base de datos" });
+      }
+
+      const id = result.insertId;
+      db.query(
+        `SELECT n.*, c.nombre AS nombre_cliente FROM notificaciones n
+       JOIN clientes c ON n.id_cliente = c.id_cliente
+       WHERE n.id_notificacion = ?`,
+        [id],
+        (err2, result2) => {
+          if (err2) {
+            return res.status(500).json({
+              success: false,
+              message: "Error al obtener notificación insertada",
+            });
+          }
+
+          res.json({ success: true, notificacion: result2[0] });
+        }
+      );
+    }
+  );
+});
+
+app.put("/api/notificaciones/:id/leida", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    UPDATE notificacionesclientes
+    SET leida = 'si'
+    WHERE id_notificacion = ?
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al marcar como leída:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error al actualizar" });
+    }
+
+    res.json({ success: true, message: "Notificación marcada como leída" });
+  });
+});
+
+app.delete("/api/notificaciones/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `DELETE FROM notificacionesclientes WHERE id_notificacion = ?`;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar notificación:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error al eliminar" });
+    }
+
+    res.json({ success: true, message: "Notificación eliminada" });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 Gestion Promociones                */
+
+// 🔁 Obtener promociones
+app.get("/api/promociones", (req, res) => {
+  const sql = `
+    SELECT p.id_promocion, pr.nombre AS producto, p.descripcion, 
+           CONCAT(p.descuento, '%') AS descuento, 
+           p.fecha_inicio, p.fecha_fin, p.estado
+    FROM promociones p
+    JOIN productos pr ON p.id_producto = pr.id_producto
+    ORDER BY p.fecha_inicio DESC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener promociones:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true, promociones: results });
+  });
+});
+
+// ➕ Agregar nueva promoción
+app.post("/api/promociones", (req, res) => {
+  const {
+    id_producto,
+    descripcion,
+    descuento,
+    fecha_inicio,
+    fecha_fin,
+    estado,
+  } = req.body;
+
+  const sql = `
+    INSERT INTO promociones (id_producto, descripcion, descuento, fecha_inicio, fecha_fin, estado)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [id_producto, descripcion, descuento, fecha_inicio, fecha_fin, estado],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al insertar promoción:", err);
+        return res.status(500).json({ success: false, error: err });
+      }
+      res.json({ success: true, insertId: result.insertId });
+    }
+  );
+});
+
+// 🗑️ Eliminar promoción por ID
+app.delete("/api/promociones/:id", (req, res) => {
+  const id = req.params.id;
+
+  const sql = "DELETE FROM promociones WHERE id_promocion = ?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar promoción:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({
+      success: true,
+      message: "✅ Promoción eliminada correctamente",
+    });
+  });
+});
+
+// ✏️ Editar promoción existente
+app.put("/api/promociones/:id", (req, res) => {
+  const id = req.params.id;
+  const {
+    id_producto,
+    descripcion,
+    descuento,
+    fecha_inicio,
+    fecha_fin,
+    estado,
+  } = req.body;
+
+  const sql = `
+    UPDATE promociones 
+    SET id_producto = ?, descripcion = ?, descuento = ?, fecha_inicio = ?, fecha_fin = ?, estado = ?
+    WHERE id_promocion = ?
+  `;
+
+  db.query(
+    sql,
+    [id_producto, descripcion, descuento, fecha_inicio, fecha_fin, estado, id],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al actualizar promoción:", err);
+        return res.status(500).json({ success: false, error: err });
+      }
+      res.json({
+        success: true,
+        message: "✅ Promoción actualizada correctamente",
+      });
+    }
+  );
+});
+
+/* ------------------------------------- */
+/* 🔹 GESTION PRODUCTOS                  */
+/* ------------------------------------- */
+
+app.get("/api/productos", (req, res) => {
+  const sql = `
+    SELECT 
+      p.id_producto,
+      p.nombre,
+      p.descripcion,
+      p.categoria,
+      p.stock_actual,
+      p.stock_minimo,
+      p.precio,
+      p.editorial_o_marca,
+      p.fecha_lanzamiento,
+      p.imagen_url,
+      pr.nombre AS proveedor
+    FROM productos p
+    LEFT JOIN proveedores pr ON p.id_proveedor = pr.id_proveedor
+    ORDER BY p.id_producto
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener productos:", err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, productos: results });
+  });
+});
+
+// Agregar producto
+app.post("/api/productos", (req, res) => {
+  const {
+    nombre,
+    descripcion,
+    categoria,
+    stock_actual,
+    precio,
+    editorial_o_marca,
+    fecha_lanzamiento,
+  } = req.body;
+
+  const sql = `
+    INSERT INTO productos 
+    (nombre, descripcion, categoria, stock_actual, precio, editorial_o_marca, fecha_lanzamiento)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [
+      nombre,
+      descripcion,
+      categoria,
+      stock_actual,
+      precio,
+      editorial_o_marca,
+      fecha_lanzamiento,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al insertar producto:", err);
+        return res.status(500).json({ success: false, error: err });
+      }
+      res.json({ success: true, insertId: result.insertId });
+    }
+  );
+});
+
+app.put("/api/productos/:id", (req, res) => {
+  const id = req.params.id;
+  const {
+    nombre,
+    descripcion,
+    categoria,
+    stock_actual,
+    stock_minimo,
+    precio,
+    editorial_o_marca,
+    fecha_lanzamiento,
+    imagen_url,
+    id_proveedor,
+  } = req.body;
+
+  const sql = `UPDATE productos SET
+    nombre = ?, descripcion = ?, categoria = ?, stock_actual = ?, stock_minimo = ?, precio = ?, editorial_o_marca = ?, fecha_lanzamiento = ?, imagen_url = ?, id_proveedor = ?
+    WHERE id_producto = ?`;
+
+  db.query(
+    sql,
+    [
+      nombre,
+      descripcion,
+      categoria,
+      stock_actual,
+      stock_minimo,
+      precio,
+      editorial_o_marca,
+      fecha_lanzamiento,
+      imagen_url,
+      id_proveedor,
+      id,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al actualizar producto:", err);
+        return res.status(500).json({ success: false });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+// Eliminar producto
+app.delete("/api/productos/:id", (req, res) => {
+  const id = req.params.id;
+  const sql = "DELETE FROM productos WHERE id_producto = ?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar producto:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 GESTION PROVEEDORES                */
+/* ------------------------------------- */
+
+// 📦 Obtener todos los proveedores
+app.get("/api/proveedores", (req, res) => {
+  const sql = `SELECT * FROM proveedores ORDER BY id_proveedor`;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener proveedores:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true, proveedores: results });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 GESTION ORDENES DE COMPRA          */
+/* ------------------------------------- */
+
+app.get("/api/ordenesproveedor", (req, res) => {
+  const sql = `
+    SELECT 
+      o.id_orden,
+      p.nombre AS producto,
+      pr.nombre AS proveedor,
+      o.cantidad,
+      o.estado,
+      o.fecha_entrega_real
+    FROM ordenesproveedores o
+    JOIN productos p ON o.id_producto = p.id_producto
+    JOIN proveedores pr ON o.id_proveedor = pr.id_proveedor
+    ORDER BY o.id_orden DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener órdenes:", err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, ordenes: results });
   });
 });
 

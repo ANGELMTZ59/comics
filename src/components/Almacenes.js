@@ -1,138 +1,106 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FaPlus,
-  FaCog,
-  FaFilter,
-  FaEllipsisV,
-  FaEdit,
-  FaSearch,
-  FaHashtag,
-  FaDollarSign,
-  FaTrash,
-  FaBoxOpen,
-  FaFileInvoiceDollar,
-  FaHome
-} from "react-icons/fa";
-import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaBoxOpen } from "react-icons/fa";
+import Sidebar from "./sidebar";
 import "../promociones.css";
 
+const API_URL = "http://localhost:5000/api";
+
 const Almacenes = () => {
-  const navigate = useNavigate();
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [mostrarOpciones, setMostrarOpciones] = useState(false);
+  const [productos, setProductos] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroNumero, setFiltroNumero] = useState("");
-  const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroPrecio, setFiltroPrecio] = useState("");
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const [productoForm, setProductoForm] = useState({
+    id_producto: null,
     nombre: "",
     descripcion: "",
     categoria: "comic",
     stock_actual: 0,
+    stock_minimo: 0,
     precio: 0,
     editorial_o_marca: "",
     fecha_lanzamiento: "",
+    imagen_url: "",
+    id_proveedor: "",
   });
 
-  const [productos, setProductos] = useState([
-    {
-      id_producto: 1,
-      nombre: "Spider-Man #1",
-      descripcion: "Edición limitada de Spider-Man",
-      categoria: "comic",
-      stock_actual: 15,
-      precio: 299.99,
-      editorial_o_marca: "Marvel",
-      fecha_lanzamiento: "2024-02-15",
-    },
-    {
-      id_producto: 2,
-      nombre: "Figura de Batman",
-      descripcion: "Figura coleccionable edición especial",
-      categoria: "figura de colección",
-      stock_actual: 5,
-      precio: 799.99,
-      editorial_o_marca: "DC Comics",
-      fecha_lanzamiento: "2023-11-01",
-    },
-  ]);
+  // 🚀 Cargar productos y proveedores
+  useEffect(() => {
+    fetchProductos();
+  }, []);
 
-  // 🛒 Agregar Producto
-  const agregarProducto = () => {
-    if (!productoForm.nombre || productoForm.precio <= 0) {
-      alert("Completa los campos obligatorios.");
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/productos`);
+      if (res.data.success) {
+        setProductos(res.data.productos);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener productos:", error);
+    }
+  };
+
+  const fetchProveedores = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/proveedores`);
+      if (res.data.success) setProveedores(res.data.proveedores);
+    } catch (err) {
+      console.error("❌ Error al obtener proveedores:", err);
+    }
+  };
+
+  // 💾 Guardar producto
+  const guardarProducto = async () => {
+    if (!productoForm.nombre || isNaN(productoForm.precio)) {
+      alert("Completa todos los campos obligatorios.");
       return;
     }
 
-    setProductos([
-      ...productos,
-      { ...productoForm, id_producto: productos.length + 1 },
-    ]);
-
-    setProductoForm({
-      nombre: "",
-      descripcion: "",
-      categoria: "comic",
-      stock_actual: 0,
-      precio: 0,
-      editorial_o_marca: "",
-      fecha_lanzamiento: "",
-    });
-
-    setMostrarFormulario(false);
-  };
-
-  // ✏️ Editar Producto
-  const editarProducto = (id_producto) => {
-    const producto = productos.find((p) => p.id_producto === id_producto);
-    if (producto) {
-      setProductoForm(producto);
-      setMostrarFormulario(true);
+    try {
+      if (productoForm.id_producto) {
+        await axios.put(
+          `${API_URL}/productos/${productoForm.id_producto}`,
+          productoForm
+        );
+      } else {
+        await axios.post(`${API_URL}/productos`, productoForm);
+      }
+      fetchProductos();
+      setMostrarFormulario(false);
+    } catch (err) {
+      console.error("❌ Error al guardar producto:", err);
     }
   };
 
-  // ❌ Eliminar Producto
-  const eliminarProducto = (id_producto) => {
-    if (window.confirm("¿Seguro que quieres eliminar este producto?")) {
-      setProductos(productos.filter((p) => p.id_producto !== id_producto));
+  // 📝 Editar
+  const editarProducto = (producto) => {
+    setProductoForm(producto);
+    setMostrarFormulario(true);
+  };
+
+  // 🗑️ Eliminar
+  const eliminarProducto = async (id) => {
+    if (!window.confirm("¿Eliminar producto?")) return;
+    try {
+      await axios.delete(`${API_URL}/productos/${id}`);
+      fetchProductos();
+    } catch (err) {
+      console.error("❌ Error al eliminar producto:", err);
     }
   };
 
-  // 🔍 Filtrar Productos
-  const productosFiltrados = productos.filter(
-    (p) =>
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  const productosFiltrados = productos.filter((p) =>
+    `${p.nombre} ${p.descripcion}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
-
-  const handleEditar = (id) => {
-    navigate(`/editar-producto/${id}`);
-  };
-
-  const toggleFormulario = () => {
-    setMostrarFormulario(!mostrarFormulario);
-  };
-
-  const toggleOpciones = () => {
-    setMostrarOpciones(!mostrarOpciones);
-  };
-
-  const toggleFiltros = () => {
-    setMostrarFiltros(!mostrarFiltros);
-  };
 
   return (
     <div className="almacenes-page">
-      <Sidebar /> {/* ✅ Se muestra el sidebar importado */}
+      <Sidebar />
 
-      {/* Contenido principal de Almacenes */}
-      {/* Encabezado */}
-      {/* Encabezado */}
       <div className="almacen-header">
         <h2>
           <FaBoxOpen /> Gestión de Productos en Almacén
@@ -145,7 +113,6 @@ const Almacenes = () => {
         </button>
       </div>
 
-      {/* Buscador */}
       <div className="buscador">
         <FaSearch className="icono-busqueda" />
         <input
@@ -156,7 +123,6 @@ const Almacenes = () => {
         />
       </div>
 
-      {/* Tabla */}
       <div className="tabla-container">
         <table className="productos-table">
           <thead>
@@ -166,9 +132,12 @@ const Almacenes = () => {
               <th>Descripción</th>
               <th>Categoría</th>
               <th>Stock</th>
+              <th>Stock Mínimo</th>
               <th>Precio</th>
               <th>Marca/Editorial</th>
               <th>Fecha de Lanzamiento</th>
+              <th>Proveedor</th>
+              <th>Imagen</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -180,13 +149,22 @@ const Almacenes = () => {
                 <td>{p.descripcion}</td>
                 <td>{p.categoria}</td>
                 <td>{p.stock_actual}</td>
-                <td>${p.precio.toFixed(2)}</td>
-                <td>{p.editorial_o_marca || "N/A"}</td>
+                <td>{p.stock_minimo}</td>
+                <td>${parseFloat(p.precio || 0).toFixed(2)}</td>
+                <td>{p.editorial_o_marca}</td>
                 <td>{p.fecha_lanzamiento || "N/A"}</td>
+                <td>{p.proveedor || "N/A"}</td>
+                <td>
+                  {p.imagen_url ? (
+                    <img src={p.imagen_url} alt="Producto" width={40} />
+                  ) : (
+                    "Sin imagen"
+                  )}
+                </td>
                 <td>
                   <button
                     className="btn-editar"
-                    onClick={() => editarProducto(p.id_producto)}
+                    onClick={() => editarProducto(p)}
                   >
                     <FaEdit />
                   </button>
@@ -203,7 +181,6 @@ const Almacenes = () => {
         </table>
       </div>
 
-      {/* Formulario de Registro y Edición */}
       {mostrarFormulario && (
         <div className="modal">
           <div className="modal-content">
@@ -218,6 +195,7 @@ const Almacenes = () => {
                 setProductoForm({ ...productoForm, nombre: e.target.value })
               }
             />
+
             <label>Descripción:</label>
             <input
               type="text"
@@ -229,6 +207,7 @@ const Almacenes = () => {
                 })
               }
             />
+
             <label>Categoría:</label>
             <select
               value={productoForm.categoria}
@@ -239,6 +218,7 @@ const Almacenes = () => {
               <option value="comic">Comic</option>
               <option value="figura de colección">Figura de colección</option>
             </select>
+
             <label>Stock Actual:</label>
             <input
               type="number"
@@ -246,23 +226,90 @@ const Almacenes = () => {
               onChange={(e) =>
                 setProductoForm({
                   ...productoForm,
-                  stock_actual: Number(e.target.value),
+                  stock_actual: e.target.value,
                 })
               }
             />
+
+            <label>Stock Mínimo:</label>
+            <input
+              type="number"
+              value={productoForm.stock_minimo}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  stock_minimo: e.target.value,
+                })
+              }
+            />
+
             <label>Precio:</label>
             <input
               type="number"
               value={productoForm.precio}
               onChange={(e) =>
+                setProductoForm({ ...productoForm, precio: e.target.value })
+              }
+            />
+
+            <label>Marca/Editorial:</label>
+            <input
+              type="text"
+              value={productoForm.editorial_o_marca}
+              onChange={(e) =>
                 setProductoForm({
                   ...productoForm,
-                  precio: Number(e.target.value),
+                  editorial_o_marca: e.target.value,
                 })
               }
             />
-            <button className="btn-guardar" onClick={agregarProducto}>Guardar</button>
-            <button className="btn-cerrar" onClick={() => setMostrarFormulario(false)}>
+
+            <label>Fecha de Lanzamiento:</label>
+            <input
+              type="date"
+              value={productoForm.fecha_lanzamiento}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  fecha_lanzamiento: e.target.value,
+                })
+              }
+            />
+
+            <label>URL de Imagen:</label>
+            <input
+              type="text"
+              value={productoForm.imagen_url}
+              onChange={(e) =>
+                setProductoForm({ ...productoForm, imagen_url: e.target.value })
+              }
+            />
+
+            <label>Proveedor:</label>
+            <select
+              value={productoForm.id_proveedor}
+              onChange={(e) =>
+                setProductoForm({
+                  ...productoForm,
+                  id_proveedor: e.target.value,
+                })
+              }
+            >
+              <option value="">Seleccionar proveedor</option>
+              {proveedores.map((prov) => (
+                <option key={prov.id_proveedor} value={prov.id_proveedor}>
+                  {prov.nombre}
+                </option>
+              ))}
+            </select>
+
+            <button className="btn-guardar" onClick={guardarProducto}>
+              Guardar
+            </button>
+            <button
+              className="btn-cerrar"
+              onClick={() => setMostrarFormulario(false)}
+            >
               Cancelar
             </button>
           </div>

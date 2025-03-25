@@ -105,40 +105,55 @@
 
 /* 📌 Contenedor de la tabla */
 .tabla-container {
-    
     width: 100%;
     max-width: 1100px;
+    margin: 0 auto;
     background: white;
     border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 15px;
+    padding: 0;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.08);
     overflow-x: auto;
-    margin-left: auto;
-    margin-right: auto;
-}
+  }
+  
 
 /* 📌 Estilo de la tabla */
 .promociones-table {
-    width: 90%;
-    margin-left: 60px;
+    width: 100%;
     border-collapse: collapse;
-    text-align: center;
     font-size: 14px;
-}
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.08);
+    background-color: white;
+  }
 
 /* 📌 Ajuste de las celdas */
 .promociones-table th, .promociones-table td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
+    padding: 8px 10px;
+    border-bottom: 1px solid #e6e6e6;
+    text-align: center;
+    vertical-align: middle;
+  }
 
 /* 📌 Encabezado de la tabla */
 .promociones-table th {
     background-color: #2c3e50;
-    color: white;
+    color: #fff;
+    padding: 10px;
     font-weight: bold;
-    font-size: 15px;
-}
+    text-align: center;
+  }
+
+  .promociones-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+ /* 📌 Hover en filas */
+.promociones-table tbody tr:hover {
+    background-color: #f9f9f9;
+  }
 
 /* 📌 Estado de promociones */
 .estado-activa {
@@ -162,22 +177,22 @@
 /* 📌 Ajuste de los botones */
 .acciones {
     display: flex;
-    gap: 5px;
     justify-content: center;
-}
+    gap: 6px;
+  }
 
 /* 📌 Botones */
 .btn-ver, .btn-editar, .btn-eliminar {
     border: none;
-    width: 35px;
-    height: 35px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    font-size: 14px;
     display: flex;
-    align-items: center;
     justify-content: center;
-}
+    align-items: center;
+    cursor: pointer;
+  }
 
 .btn-ver {
     background-color: #17a2b8;
@@ -209,12 +224,11 @@
 
 .modal-content {
     background: white;
-    padding: 20px;
+    padding: 15px 20px;
     border-radius: 10px;
-    width: 400px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-    text-align: center;
-}
+    width: 380px;
+    text-align: left;
+  }
 
 .modal-content label {
     display: block;
@@ -223,11 +237,10 @@
     text-align: left;
 }
 
-.modal-content input, .modal-content select {
-    width: 100%;
-    padding: 8px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+.modal-content input,
+.modal-content select {
+  font-size: 13px;
+  padding: 6px 10px;
 }
 
 .modal-buttons {

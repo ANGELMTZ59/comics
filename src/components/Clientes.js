@@ -69,7 +69,7 @@ const Clientes = () => {
   };
 
   const abrirModalEditar = (cliente) => {
-    setEditingClient(cliente);
+    setEditingClient(cliente); // ✅ Hasta aquí bien
     setClienteForm({
       nombre: cliente.nombre,
       email: cliente.email,
@@ -97,6 +97,10 @@ const Clientes = () => {
 
   // ✅ Guardar cliente (Nuevo o Editado)
   const guardarCliente = async () => {
+    console.log("🛠 GUARDANDO CLIENTE...");
+    console.log("¿Está editando?", editingClient);
+    console.log("Formulario actual:", clienteForm);
+
     if (
       !clienteForm.nombre ||
       !clienteForm.email ||
@@ -109,18 +113,20 @@ const Clientes = () => {
 
     try {
       if (editingClient) {
-        // Si estamos editando, enviamos una petición PUT al servidor
+        const id = clienteForm.id_cliente || editingClient?.id_cliente;
+        console.log("✏️ Enviando PUT a:", `${API_URL}/clientes/${id}`);
+
         const response = await axios.put(
-          `${API_URL}/clientes/${editingClient.id_cliente}`,
+          `${API_URL}/clientes/${id}`,
           clienteForm
         );
+
+        console.log("🧾 Respuesta al editar:", response.data);
 
         if (response.data.success) {
           setClientes(
             clientes.map((c) =>
-              c.id_cliente === editingClient.id_cliente
-                ? { ...c, ...clienteForm }
-                : c
+              c.id_cliente === id ? { ...c, ...clienteForm } : c
             )
           );
           alert("✅ Cliente actualizado correctamente");
@@ -128,10 +134,10 @@ const Clientes = () => {
           alert("❌ Error al actualizar el cliente");
         }
       } else {
-        // Si es un nuevo cliente, enviamos una petición POST para agregarlo
+        // CREACIÓN
         const response = await axios.post(`${API_URL}/clientes`, clienteForm);
 
-        if (response.data.success) {
+        if (response.data.success && response.data.cliente) {
           setClientes([...clientes, response.data.cliente]);
           alert("✅ Cliente agregado correctamente");
         } else {
@@ -248,13 +254,15 @@ const Clientes = () => {
           <tbody>
             {clientes && clientes.length > 0 ? (
               clientes
+                .filter((cliente) => cliente && cliente.nombre && cliente.email)
                 .filter((cliente) =>
                   [cliente.nombre, cliente.email, cliente.nivel_membresia]
-                    .filter(Boolean) // 🔹 Evita errores si alguna clave es null
+                    .filter(Boolean)
                     .some((campo) =>
                       campo.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                 )
+
                 .map((cliente, index) => (
                   <tr key={cliente.id_cliente}>
                     <td>{index + 1}</td>

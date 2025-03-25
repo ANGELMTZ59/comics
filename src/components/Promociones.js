@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaTags, FaEye } from "react-icons/fa";
+import axios from "axios";
+import {
+  FaPlus,
+  FaSearch,
+  FaEdit,
+  FaTrash,
+  FaTags,
+  FaEye,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../promociones.css";
 import Sidebar from "./sidebar";
@@ -21,30 +29,21 @@ const Promociones = () => {
   const [editingPromocion, setEditingPromocion] = useState(null);
 
   useEffect(() => {
-    setProductos([
-      { id_producto: 1, nombre: "Laptop Dell" },
-      { id_producto: 2, nombre: "Mouse Gamer" },
-    ]);
-    setPromociones([
-      {
-        id_promocion: 1,
-        producto: "Laptop Dell",
-        descripcion: "Descuento especial de primavera",
-        descuento: "15%",
-        fecha_inicio: "2025-03-10",
-        fecha_fin: "2025-03-20",
-        estado: "activa",
-      },
-      {
-        id_promocion: 2,
-        producto: "Mouse Gamer",
-        descripcion: "Oferta relámpago",
-        descuento: "10%",
-        fecha_inicio: "2025-03-08",
-        fecha_fin: "2025-03-15",
-        estado: "inactiva",
-      },
-    ]);
+    const fetchData = async () => {
+      try {
+        const resProductos = await axios.get(
+          "http://localhost:5000/api/productos"
+        );
+        const resPromociones = await axios.get(
+          "http://localhost:5000/api/promociones"
+        );
+        setProductos(resProductos.data.productos);
+        setPromociones(resPromociones.data.promociones);
+      } catch (err) {
+        console.error("❌ Error al cargar datos:", err);
+      }
+    };
+    fetchData();
   }, []);
 
   const abrirModal = (promocion = null) => {
@@ -66,21 +65,34 @@ const Promociones = () => {
     setModalVisible(false);
   };
 
-  const guardarPromocion = () => {
-    if (!promocionForm.id_producto || !promocionForm.descripcion || !promocionForm.descuento) {
+  const guardarPromocion = async () => {
+    if (
+      !promocionForm.id_producto ||
+      !promocionForm.descripcion ||
+      !promocionForm.descuento
+    ) {
       alert("Completa todos los campos");
       return;
     }
-    const productoSeleccionado = productos.find(
-      (p) => p.id_producto.toString() === promocionForm.id_producto
-    );
-    const nuevaPromocion = {
-      id_promocion: promociones.length + 1,
-      producto: productoSeleccionado ? productoSeleccionado.nombre : "Desconocido",
-      ...promocionForm,
-    };
-    setPromociones((prev) => [...prev, nuevaPromocion]);
-    cerrarModal();
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/promociones",
+        promocionForm
+      );
+      if (response.data.success) {
+        alert("✅ Promoción agregada correctamente");
+        setModalVisible(false);
+        // Refrescar promociones
+        const resPromociones = await axios.get(
+          "http://localhost:5000/api/promociones"
+        );
+        setPromociones(resPromociones.data.promociones);
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar promoción:", error);
+      alert("Error al guardar la promoción.");
+    }
   };
 
   return (
@@ -125,8 +137,14 @@ const Promociones = () => {
             promociones
               .filter(
                 (p) =>
-                  (p.producto && p.producto.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                  (p.descripcion && p.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+                  (p.producto &&
+                    p.producto
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())) ||
+                  (p.descripcion &&
+                    p.descripcion
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()))
               )
               .map((p, index) => (
                 <tr key={p.id_promocion}>
@@ -134,14 +152,17 @@ const Promociones = () => {
                   <td>{p.producto}</td>
                   <td>{p.descripcion}</td>
                   <td>{p.descuento}</td>
-                  <td>{p.fecha_inicio}</td>
-                  <td>{p.fecha_fin}</td>
+                  <td>{new Date(p.fecha_inicio).toLocaleDateString()}</td>
+                  <td>{new Date(p.fecha_fin).toLocaleDateString()}</td>
                   <td>{p.estado}</td>
                   <td className="acciones">
                     <button className="btn-ver">
                       <FaEye />
                     </button>
-                    <button className="btn-editar" onClick={() => abrirModal(p)}>
+                    <button
+                      className="btn-editar"
+                      onClick={() => abrirModal(p)}
+                    >
                       <FaEdit />
                     </button>
                     <button className="btn-eliminar">

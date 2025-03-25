@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaPlus, FaEye, FaCheck, FaTrash, FaBell } from "react-icons/fa";
+import {
+  FaSearch,
+  FaPlus,
+  FaEye,
+  FaCheck,
+  FaTrash,
+  FaBell,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styless.css";
@@ -11,6 +18,8 @@ const Notificaciones = () => {
   const [notificaciones, setNotificaciones] = useState([]);
   const [modalAgregarVisible, setModalAgregarVisible] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [clientes, setClientes] = useState([]);
+  const [promociones, setPromociones] = useState([]);
 
   const [notificacionForm, setNotificacionForm] = useState({
     id_cliente: "",
@@ -20,45 +29,25 @@ const Notificaciones = () => {
     leida: "no",
   });
 
-  // 🔹 Clientes y Promociones simuladas para el prototipo
-  const [clientes, setClientes] = useState([
-    { id_cliente: 1, nombre: "Carlos López" },
-    { id_cliente: 2, nombre: "María González" },
-  ]);
-
-  const [promociones, setPromociones] = useState([
-    { id_promocion: 1, titulo: "Descuento 20%" },
-    { id_promocion: 2, titulo: "Evento Exclusivo" },
-  ]);
-
-  // Simulación de notificaciones
   useEffect(() => {
-    setNotificaciones([
-      {
-        id: 1,
-        cliente: "Carlos López",
-        asunto: "Promoción Especial",
-        mensaje: "Aprovecha un 20% de descuento en tu próxima compra.",
-        fecha: "2025-03-08",
-        estado: "No leído",
-      },
-      {
-        id: 2,
-        cliente: "María González",
-        asunto: "Recordatorio de Pago",
-        mensaje: "Tu membresía expira pronto, renueva ahora.",
-        fecha: "2025-03-07",
-        estado: "Leído",
-      },
-      {
-        id: 3,
-        cliente: "Carlos López",
-        asunto: "Nuevo Evento",
-        mensaje: "Evento exclusivo para miembros este fin de semana.",
-        fecha: "2025-03-06",
-        estado: "No leído",
-      },
-    ]);
+    const fetchNotificaciones = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/notificaciones"
+        );
+        if (response.data.success) {
+          setNotificaciones(response.data.notificaciones);
+          console.log(
+            "📨 Notificaciones cargadas:",
+            response.data.notificaciones
+          );
+        }
+      } catch (error) {
+        console.error("❌ Error al obtener notificaciones:", error);
+      }
+    };
+
+    fetchNotificaciones();
   }, []);
 
   const markAsRead = (id) => {
@@ -71,41 +60,97 @@ const Notificaciones = () => {
     setNotificaciones(notificaciones.filter((n) => n.id !== id));
   };
 
-  const guardarNotificacion = () => {
-    if (!notificacionForm.id_cliente || !notificacionForm.titulo || !notificacionForm.mensaje) {
+  const guardarNotificacion = async () => {
+    if (
+      !notificacionForm.id_cliente ||
+      !notificacionForm.titulo ||
+      !notificacionForm.mensaje
+    ) {
       alert("Por favor, completa los campos obligatorios.");
       return;
     }
 
-    // Obtener nombre del cliente
-    const clienteSeleccionado = clientes.find(
-      (cliente) => cliente.id_cliente.toString() === notificacionForm.id_cliente
-    );
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/notificaciones",
+        {
+          ...notificacionForm,
+          fecha_envio: new Date().toISOString().split("T")[0],
+        }
+      );
 
-    const nuevaNotificacion = {
-      id: notificaciones.length + 1,
-      cliente: clienteSeleccionado ? clienteSeleccionado.nombre : "Desconocido",
-      asunto: notificacionForm.titulo,
-      mensaje: notificacionForm.mensaje,
-      fecha: new Date().toISOString().split("T")[0],
-      estado: "No leído",
-    };
+      if (response.data.success) {
+        alert("✅ Notificación agregada correctamente");
 
-    setNotificaciones((prev) => [...prev, nuevaNotificacion]);
-    setModalAgregarVisible(false);
+        // Actualiza la lista para que aparezca la nueva notificación
+        setNotificaciones((prev) => [...prev, response.data.notificacion]);
+        setModalAgregarVisible(false);
+      } else {
+        alert("❌ No se pudo agregar la notificación");
+      }
+    } catch (error) {
+      console.error("❌ Error al guardar notificación:", error);
+      alert("❌ Error en el servidor");
+    }
+  };
+
+  const marcarComoLeida = async (id) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/notificaciones/${id}/leida`
+      );
+
+      if (response.data.success) {
+        // Actualiza la notificación en el estado
+        setNotificaciones((prev) =>
+          prev.map((n) =>
+            n.id_notificacion === id ? { ...n, leida: "si" } : n
+          )
+        );
+      } else {
+        alert("❌ No se pudo marcar como leída");
+      }
+    } catch (error) {
+      console.error("❌ Error al marcar como leída:", error);
+      alert("❌ Error al actualizar");
+    }
+  };
+
+  const eliminarNotificacion = async (id) => {
+    if (!window.confirm("¿Estás seguro de eliminar esta notificación?")) return;
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/notificaciones/${id}`
+      );
+
+      if (response.data.success) {
+        setNotificaciones((prev) =>
+          prev.filter((n) => n.id_notificacion !== id)
+        );
+        alert("✅ Notificación eliminada");
+      } else {
+        alert("❌ No se pudo eliminar la notificación");
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar notificación:", error);
+      alert("❌ Error en el servidor");
+    }
   };
 
   return (
     <div className="notificaciones-page">
       <Sidebar /> {/* ✅ Sidebar importado y agregado */}
-      
       <div className="notificaciones-container">
         {/* Encabezado */}
         <div className="titulo-y-boton">
           <h2>
             <FaBell className="icono-titulo" /> Gestión de Notificaciones
           </h2>
-          <button className="btn-agregar" onClick={() => setModalAgregarVisible(true)}>
+          <button
+            className="btn-agregar"
+            onClick={() => setModalAgregarVisible(true)}
+          >
             <FaPlus /> Crear Notificación
           </button>
         </div>
@@ -132,46 +177,50 @@ const Notificaciones = () => {
                 <th>Mensaje</th>
                 <th>Fecha</th>
                 <th>Estado</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {notificaciones
-                .filter(
-                  (n) =>
-                    (n.cliente ? n.cliente.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
-                    (n.asunto ? n.asunto.toLowerCase().includes(searchTerm.toLowerCase()) : false)
-                )
-                .map((n, index) => (
-                  <tr key={n.id}>
+              {notificaciones.length > 0 ? (
+                notificaciones.map((n, index) => (
+                  <tr key={n.id_notificacion}>
                     <td>{index + 1}</td>
-                    <td>{n.cliente || "Desconocido"}</td>
-                    <td>{n.asunto || "Sin Asunto"}</td>
-                    <td className="mensaje-columna">{n.mensaje || "Sin Mensaje"}</td>
-                    <td>{n.fecha || "Sin Fecha"}</td>
+                    <td>{n.nombre_cliente}</td>
+                    <td>{n.titulo}</td>
+                    <td>{n.mensaje}</td>
                     <td>
-                      <span className={`estado ${n.estado ? n.estado.toLowerCase() : "no-leido"}`}>
-                        {n.estado || "No leído"}
-                      </span>
+                      {new Date(n.fecha_envio).toISOString().split("T")[0]}
                     </td>
                     <td className="acciones">
-                      <button className="btn-ver">
-                        <FaEye />
-                      </button>
-                      <button className="btn-leido" onClick={() => markAsRead(n.id)}>
-                        <FaCheck />
-                      </button>
-                      <button className="btn-eliminar" onClick={() => deleteNotification(n.id)}>
-                        <FaTrash />
-                      </button>
+                      {n.leida === "no" && (
+                        <button
+                          className="btn-marcar"
+                          onClick={() => marcarComoLeida(n.id_notificacion)}
+                        >
+                          <FaCheck />
+                        </button>
+                      )}
+                      {n.leida === "si" && (
+                        <button
+                          className="btn-eliminar"
+                          onClick={() =>
+                            eliminarNotificacion(n.id_notificacion)
+                          }
+                        >
+                          <FaTrash />
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ))}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7">⚠ No hay notificaciones disponibles</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-
       {modalAgregarVisible && (
         <div className="modal">
           <div className="modal-content">
@@ -238,7 +287,10 @@ const Notificaciones = () => {
             <button className="btn-guardar" onClick={guardarNotificacion}>
               Guardar
             </button>
-            <button className="btn-cerrar" onClick={() => setModalAgregarVisible(false)}>
+            <button
+              className="btn-cerrar"
+              onClick={() => setModalAgregarVisible(false)}
+            >
               Cerrar
             </button>
           </div>
