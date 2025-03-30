@@ -1,21 +1,35 @@
 import React, { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { login } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../styles.css"; // Asegúrate de que el archivo esté correctamente nombrado e importado.
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const response = await login(email, password);
-    if (response.token) {
-      localStorage.setItem("token", response.token);
-      window.location.href = "/inicioempleado"; // Redirige al dashboard
-    } else {
-      setError(response.error || "Credenciales incorrectas");
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/login", {
+        email,
+        password,
+      });
+
+      if (response.data.success) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("empleado", JSON.stringify(response.data.usuario));
+        window.location.href = "/inicioempleado";
+      } else {
+        alert("❌ Usuario o contraseña incorrectos");
+      }
+    } catch (error) {
+      console.error("❌ Error al iniciar sesión:", error);
+      alert("Error al iniciar sesión");
     }
   };
 

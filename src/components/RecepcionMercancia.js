@@ -34,7 +34,14 @@ const RecepcionMercancia = () => {
   });
 
   // 🟢 Obtener datos al cargar
+  const [proveedores, setProveedores] = useState([]);
+
   useEffect(() => {
+    axios.get(`${API_URL}/proveedores`).then((res) => {
+      if (res.data.success) setProveedores(res.data.proveedores);
+    });
+
+    // 🔧 Agregar esta línea para cargar los productos
     obtenerRecepciones();
   }, []);
 
@@ -83,12 +90,14 @@ const RecepcionMercancia = () => {
                 placeholder="Número"
                 onChange={handleChange}
               />
-              <input
-                type="text"
-                name="proveedor"
-                placeholder="Proveedor"
-                onChange={handleChange}
-              />
+              <select name="id_proveedor" onChange={handleChange}>
+                <option value="">Seleccionar proveedor</option>
+                {proveedores.map((prov) => (
+                  <option key={prov.id_proveedor} value={prov.id_proveedor}>
+                    {prov.nombre}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 name="almacen"
@@ -227,42 +236,43 @@ const RecepcionMercancia = () => {
           )}
         </div>
 
-        {/* Tabla */}
-        <div className="almacen-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>Proveedor</th>
-                <th>Almacén</th>
-                <th>Fecha de Recepción</th>
-                <th>Fecha de Documento</th>
-                <th>Núm. Documento</th>
-                <th>Tipo Producto</th>
-                <th>Cantidad</th>
-                <th>Marca</th>
-                <th>Estatus</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productos.map((producto, index) => (
-                <tr key={index}>
-                  <td>{producto.numero}</td>
-                  <td>{producto.proveedor}</td>
-                  <td>{producto.almacen}</td>
-                  <td>{producto.fechaRecepcion}</td>
-                  <td>{producto.fechaDocumento}</td>
-                  <td>{producto.numDocumento}</td>
-                  <td>{producto.tipoProducto}</td>
-                  <td>{producto.cantidad}</td>
-                  <td>{producto.marca}</td>
-                  <td>{producto.estatus}</td>
-                  <td>{producto.total}</td>
+        <div className="almacen-table-wrapper">
+          <div className="almacen-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Proveedor</th>
+                  <th>Almacén</th>
+                  <th>Fecha de Recepción</th>
+                  <th>Fecha de Documento</th>
+                  <th>Núm. Documento</th>
+                  <th>Tipo Producto</th>
+                  <th>Cantidad</th>
+                  <th>Marca</th>
+                  <th>Estatus</th>
+                  <th>Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {productos.map((producto, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{producto.proveedor}</td>
+                    <td>{producto.almacen}</td>
+                    <td>{producto.fecha_recepcion?.substring(0, 10)}</td>
+                    <td>{producto.fecha_documento?.substring(0, 10)}</td>
+                    <td>{producto.numero_documento}</td>
+                    <td>{producto.tipo_producto}</td>
+                    <td>{producto.cantidad}</td>
+                    <td>{producto.marca}</td>
+                    <td>{producto.estatus}</td>
+                    <td>{Number(producto.total).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>

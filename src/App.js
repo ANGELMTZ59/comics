@@ -19,7 +19,12 @@ import Promociones from "./components/Promociones";
 import Login from "./components/Login";
 
 function App() {
-  const [empleado, setEmpleado] = useState(null);
+  const [empleado, setEmpleado] = useState(() => {
+    const stored = localStorage.getItem("empleado");
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  console.log("🧑 Empleado cargado:", empleado);
 
   return (
     <Router>
@@ -50,7 +55,7 @@ function App() {
         <Route
           path="/gestion-empleados"
           element={
-            empleado?.rol === "Administrador" ? (
+            empleado?.rol === "administrador" ? (
               <GestionEmpleados empleado={empleado} />
             ) : (
               <Navigate to="/inicioempleado" />

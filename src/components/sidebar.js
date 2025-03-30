@@ -27,9 +27,18 @@ const Sidebar = () => {
     setMenuUsuarioVisible(!menuUsuarioVisible);
   };
 
+  const empleado = JSON.parse(localStorage.getItem("empleado"));
+  const idRol = empleado?.id_rol; // o null si no existe
+
   const localEmpleado = {
     nombre: "Juan Pérez",
     correo: "juanperez@example.com",
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("empleado");
+    navigate("/login"); // redirige al login
   };
 
   return (
@@ -48,10 +57,16 @@ const Sidebar = () => {
           <div className="menu-button">
             <FaShoppingCart className="icon" />
             <span className="menu-text">Clientes</span>
-            {activeSubmenu === "clientes" ? <FaChevronUp className="arrow-icon" /> : <FaChevronDown className="arrow-icon" />}
+            {activeSubmenu === "clientes" ? (
+              <FaChevronUp className="arrow-icon" />
+            ) : (
+              <FaChevronDown className="arrow-icon" />
+            )}
           </div>
         </li>
-        <ul className={`submenu ${activeSubmenu === "clientes" ? "visible" : ""}`}>
+        <ul
+          className={`submenu ${activeSubmenu === "clientes" ? "visible" : ""}`}
+        >
           <li onClick={() => navigate("/clientes")}>Lista de Clientes</li>
           <li onClick={() => navigate("/membresias")}>Membresías</li>
           <li onClick={() => navigate("/notificaciones")}>Notificaciones</li>
@@ -62,12 +77,22 @@ const Sidebar = () => {
           <div className="menu-button">
             <FaBoxOpen className="icon" />
             <span className="menu-text">Inventarios</span>
-            {activeSubmenu === "inventarios" ? <FaChevronUp className="arrow-icon" /> : <FaChevronDown className="arrow-icon" />}
+            {activeSubmenu === "inventarios" ? (
+              <FaChevronUp className="arrow-icon" />
+            ) : (
+              <FaChevronDown className="arrow-icon" />
+            )}
           </div>
         </li>
-        <ul className={`submenu ${activeSubmenu === "inventarios" ? "visible" : ""}`}>
+        <ul
+          className={`submenu ${
+            activeSubmenu === "inventarios" ? "visible" : ""
+          }`}
+        >
           <li onClick={() => navigate("/almacenes")}>Almacenes</li>
-          <li onClick={() => navigate("/recepcion-de-mercancia")}>Recepción de Mercancía</li>
+          <li onClick={() => navigate("/recepcion-de-mercancia")}>
+            Recepción de Mercancía
+          </li>
           <li onClick={() => navigate("/movimientos")}>Movimientos</li>
         </ul>
 
@@ -75,24 +100,51 @@ const Sidebar = () => {
           <div className="menu-button">
             <FaTruck className="icon" />
             <span className="menu-text">Proveedores</span>
-            {activeSubmenu === "proveedores" ? <FaChevronUp className="arrow-icon" /> : <FaChevronDown className="arrow-icon" />}
+            {activeSubmenu === "proveedores" ? (
+              <FaChevronUp className="arrow-icon" />
+            ) : (
+              <FaChevronDown className="arrow-icon" />
+            )}
           </div>
         </li>
-        <ul className={`submenu ${activeSubmenu === "proveedores" ? "visible" : ""}`}>
-          <li onClick={() => navigate("/gestion-proveedores")}>Gestión de Proveedores</li>
-          <li onClick={() => navigate("/ordenes-de-compra")}>Órdenes de Compra</li>
+        <ul
+          className={`submenu ${
+            activeSubmenu === "proveedores" ? "visible" : ""
+          }`}
+        >
+          <li onClick={() => navigate("/gestion-proveedores")}>
+            Gestión de Proveedores
+          </li>
+          <li onClick={() => navigate("/ordenes-de-compra")}>
+            Órdenes de Compra
+          </li>
         </ul>
 
-        <li className="menu-item" onClick={() => toggleSubmenu("empleados")}>
-          <div className="menu-button">
-            <FaUsers className="icon" />
-            <span className="menu-text">Gestión de Empleados</span>
-            {activeSubmenu === "empleados" ? <FaChevronUp className="arrow-icon" /> : <FaChevronDown className="arrow-icon" />}
-          </div>
-        </li>
-        <ul className={`submenu ${activeSubmenu === "empleados" ? "visible" : ""}`}>
-          <li onClick={() => navigate("/gestion-empleados")}>Empleados</li>
-        </ul>
+        {idRol === 3 && (
+          <>
+            <li
+              className="menu-item"
+              onClick={() => toggleSubmenu("empleados")}
+            >
+              <div className="menu-button">
+                <FaUsers className="icon" />
+                <span className="menu-text">Gestión de Empleados</span>
+                {activeSubmenu === "empleados" ? (
+                  <FaChevronUp className="arrow-icon" />
+                ) : (
+                  <FaChevronDown className="arrow-icon" />
+                )}
+              </div>
+            </li>
+            <ul
+              className={`submenu ${
+                activeSubmenu === "empleados" ? "visible" : ""
+              }`}
+            >
+              <li onClick={() => navigate("/gestion-empleados")}>Empleados</li>
+            </ul>
+          </>
+        )}
       </ul>
 
       <div className="user-profile" onClick={toggleMenuUsuario}>
@@ -107,7 +159,7 @@ const Sidebar = () => {
           <p>
             <FaEnvelope /> {localEmpleado.correo}
           </p>
-          <button className="logout-button">
+          <button className="logout-button" onClick={handleLogout}>
             <FaSignOutAlt /> Cerrar sesión
           </button>
         </div>

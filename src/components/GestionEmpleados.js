@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
   FaHome,
@@ -19,42 +20,51 @@ import {
 } from "react-icons/fa";
 import "../styles.css"; // Importa el archivo CSS consolidado
 
+const API_URL = "http://localhost:5000/api"; // Ajusta si es necesario
+
 const GestionEmpleados = ({ empleado }) => {
   const navigate = useNavigate();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [empleadoEditando, setEmpleadoEditando] = useState(null);
   const [menuUsuarioVisible, setMenuUsuarioVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [empleados, setEmpleados] = useState([
-    {
-      id: 1,
-      nombre: "Juan Pérez",
-      email: "juanperez@example.com",
-      rol: "Vendedor",
-      activo: true,
-    },
-    {
-      id: 2,
-      nombre: "María López",
-      email: "marialopez@example.com",
-      rol: "Cajero",
-      activo: true,
-    },
-    {
-      id: 3,
-      nombre: "Carlos Gómez",
-      email: "carlosgomez@example.com",
-      rol: "Administrador",
-      activo: false,
-    },
-  ]);
+  const [empleados, setEmpleados] = useState([]);
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    obtenerEmpleados();
+    obtenerRoles();
+  }, []);
+
+  const obtenerEmpleados = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/usuarios`);
+      if (res.data.success) {
+        setEmpleados(res.data.usuarios);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener empleados:", error);
+    }
+  };
+
+  const obtenerRoles = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/roles`);
+      if (res.data.success) {
+        setRoles(res.data.roles);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener roles:", error);
+    }
+  };
 
   const [nuevoEmpleado, setNuevoEmpleado] = useState({
     nombre: "",
     email: "",
     password: "",
-    rol: "Vendedor",
-    activo: true,
+    telefono: "",
+    id_rol: "", // 👈 importante
+    activo: "si",
   });
 
   const localEmpleado = {
@@ -64,16 +74,25 @@ const GestionEmpleados = ({ empleado }) => {
 
   const handleEditarEmpleado = (empleado) => {
     setEmpleadoEditando(empleado);
-    setNuevoEmpleado(empleado);
+    setNuevoEmpleado({
+      nombre: empleado.nombre,
+      email: empleado.email,
+      telefono: empleado.telefono,
+      id_rol: empleado.id_rol,
+      activo: empleado.activo,
+      password: "", // ⚠️ Solo si quieres permitir cambiar la contraseña
+    });
     setModalOpen(true);
   };
 
-  const handleEliminarEmpleado = (id) => {
-    const confirmacion = window.confirm(
-      "¿Seguro que deseas eliminar este empleado?"
-    );
-    if (confirmacion) {
-      setEmpleados(empleados.filter((empleado) => empleado.id !== id));
+  const handleEliminarEmpleado = async (id) => {
+    if (window.confirm("¿Seguro que deseas eliminar este empleado?")) {
+      try {
+        await axios.delete(`${API_URL}/usuarios/${id}`);
+        obtenerEmpleados();
+      } catch (error) {
+        console.error("❌ Error al eliminar empleado:", error);
+      }
     }
   };
 
@@ -89,42 +108,43 @@ const GestionEmpleados = ({ empleado }) => {
     setMenuUsuarioVisible(!menuUsuarioVisible);
   };
 
-  const toggleActivo = (id) => {
-    setEmpleados(
-      empleados.map((emp) =>
-        emp.id === id ? { ...emp, activo: !emp.activo } : emp
-      )
-    );
+  const toggleActivo = async (id, actual) => {
+    try {
+      await axios.put(`${API_URL}/usuarios/${id}`, {
+        activo: actual === "si" ? "no" : "si",
+      });
+      obtenerEmpleados();
+    } catch (error) {
+      console.error("❌ Error al cambiar estado:", error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (empleadoEditando) {
-      setEmpleados(
-        empleados.map((emp) =>
-          emp.id === empleadoEditando.id ? { ...emp, ...nuevoEmpleado } : emp
-        )
-      );
-    } else {
-      setEmpleados([
-        ...empleados,
-        {
-          ...nuevoEmpleado,
-          id: empleados.length ? empleados[empleados.length - 1].id + 1 : 1,
-        },
-      ]);
-    }
+    try {
+      if (empleadoEditando) {
+        await axios.put(
+          `${API_URL}/usuarios/${empleadoEditando.id_usuario}`,
+          nuevoEmpleado
+        );
+      } else {
+        await axios.post(`${API_URL}/usuarios`, nuevoEmpleado);
+      }
 
-    setEmpleadoEditando(null);
-    setNuevoEmpleado({
-      nombre: "",
-      email: "",
-      password: "",
-      rol: "Vendedor",
-      activo: true,
-    });
-    setModalOpen(false);
+      obtenerEmpleados(); // 🔄 Refrescar tabla
+      setModalOpen(false);
+      setEmpleadoEditando(null);
+      setNuevoEmpleado({
+        nombre: "",
+        email: "",
+        password: "",
+        rol: "Vendedor",
+        activo: true,
+      });
+    } catch (error) {
+      console.error("❌ Error al guardar empleado:", error);
+    }
   };
 
   return (
@@ -279,6 +299,7 @@ const GestionEmpleados = ({ empleado }) => {
               <th>#</th>
               <th>Nombre</th>
               <th>Email</th>
+              <th>Teléfono</th> {/* 👈 nuevo */}
               <th>Contraseña</th>
               <th>Rol</th>
               <th>Estado</th>
@@ -287,18 +308,21 @@ const GestionEmpleados = ({ empleado }) => {
           </thead>
           <tbody>
             {empleados.map((empleado, index) => (
-              <tr key={empleado.id}>
+              <tr key={empleado.id_usuario}>
                 <td>{index + 1}</td>
                 <td>{empleado.nombre}</td>
                 <td>{empleado.email}</td>
+                <td>{empleado.telefono}</td> {/* 👈 nuevo */}
                 <td>********</td>
                 <td>{empleado.rol}</td>
                 <td>
                   <button
                     className="btn-estado"
-                    onClick={() => toggleActivo(empleado.id)}
+                    onClick={() =>
+                      toggleActivo(empleado.id_usuario, empleado.activo)
+                    }
                   >
-                    {empleado.activo ? (
+                    {empleado.activo === "si" ? (
                       <FaToggleOn className="activo" />
                     ) : (
                       <FaToggleOff className="inactivo" />
@@ -314,7 +338,7 @@ const GestionEmpleados = ({ empleado }) => {
                   </button>
                   <button
                     className="btn-accion eliminar"
-                    onClick={() => handleEliminarEmpleado(empleado.id)}
+                    onClick={() => handleEliminarEmpleado(empleado.id_usuario)}
                   >
                     <FaTrash />
                   </button>
@@ -328,7 +352,10 @@ const GestionEmpleados = ({ empleado }) => {
       {modalOpen && (
         <div className="modal">
           <div className="modal-content">
-            <button className="close-button" onClick={() => setModalOpen(false)}>
+            <button
+              className="close-button"
+              onClick={() => setModalOpen(false)}
+            >
               &times;
             </button>
             <h3>🆕 Agregar Empleado</h3>
@@ -338,7 +365,9 @@ const GestionEmpleados = ({ empleado }) => {
                 name="nombre"
                 placeholder="Nombre"
                 value={
-                  empleadoEditando ? empleadoEditando.nombre : nuevoEmpleado.nombre
+                  empleadoEditando
+                    ? empleadoEditando.nombre
+                    : nuevoEmpleado.nombre
                 }
                 onChange={handleChange}
                 required
@@ -348,7 +377,9 @@ const GestionEmpleados = ({ empleado }) => {
                 name="email"
                 placeholder="Email"
                 value={
-                  empleadoEditando ? empleadoEditando.email : nuevoEmpleado.email
+                  empleadoEditando
+                    ? empleadoEditando.email
+                    : nuevoEmpleado.email
                 }
                 onChange={handleChange}
                 required
@@ -358,15 +389,37 @@ const GestionEmpleados = ({ empleado }) => {
                 name="password"
                 placeholder="Contraseña"
                 value={
-                  empleadoEditando ? empleadoEditando.password : nuevoEmpleado.password
+                  empleadoEditando
+                    ? empleadoEditando.password
+                    : nuevoEmpleado.password
                 }
                 onChange={handleChange}
                 required
               />
-              <select name="rol" onChange={handleChange} required>
-                <option value="Vendedor">Vendedor</option>
-                <option value="Cajero">Cajero</option>
-                <option value="Administrador">Administrador</option>
+              <input
+                type="text"
+                name="telefono"
+                placeholder="Teléfono"
+                value={
+                  empleadoEditando
+                    ? empleadoEditando.telefono
+                    : nuevoEmpleado.telefono || ""
+                }
+                onChange={handleChange}
+                required
+              />
+              <select
+                name="id_rol"
+                value={nuevoEmpleado.id_rol || ""}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Seleccione un rol</option>
+                {roles.map((rol) => (
+                  <option key={rol.id_rol} value={rol.id_rol}>
+                    {rol.nombre_rol}
+                  </option>
+                ))}
               </select>
               <button type="submit">
                 {empleadoEditando ? "Guardar Cambios" : "Registrar Empleado"}

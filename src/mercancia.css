@@ -2,21 +2,15 @@
 
 /* 📌 Ajuste del contenedor principal */
 .recepcion-page {
-    width: calc(100% - 260px);
-    margin-right: 100px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     padding: 20px;
-    transition: margin-left 0.3s ease-in-out;
 }
 
-/* Si el sidebar está colapsado */
-.sidebar.collapsed + .recepcion-page {
-    margin-left: 40px;
-    width: calc(100% - 80px);
-}
-
-/* 📌 Encabezado */
+/* 📌 Ajuste de la cabecera */
 .almacen-header {
-    width: 80%;
+    width: 100%; /* Se asegura que ocupe el 100% del ancho */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -25,92 +19,50 @@
     border-radius: 8px;
     box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 15px;
-    max-width: 1100px;
-    margin-left: auto;
-    margin-right: 100px;
 }
 
-.almacen-header h2 {
-    font-size: 22px;
-    font-weight: bold;
-    color: #2c3e50;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.almacen-header .header-icon {
-    font-size: 22px;
-    color: #28a745;
-}
-
-/* 📌 Botón "Agregar Recepción" */
-.btn-agregar {
-    background-color: #28a745;
-    color: white;
-    padding: 12px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    transition: background 0.3s, transform 0.2s;
-}
-
-.btn-agregar:hover {
-    background-color: #218838;
-    transform: scale(1.05);
-}
-
-/* 📌 Barra de búsqueda */
-.buscador {
-    display: flex;
-    align-items: center;
+/* 📌 Filtros */
+.filtro-container {
+    width: 100%;
+    max-width: 100%;
     background: white;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 20px;
     box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 980px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow-x: auto; /* Habilita el desplazamiento solo cuando sea necesario */
 }
 
-.buscador input {
-    border: none;
-    outline: none;
-    padding: 6px;
-    width: 100%;
-    font-size: 14px;
-}
-
-.icono-busqueda {
-    margin-right: 10px;
-    color: #555;
-}
-
-/* 📌 Contenedor de la tabla */
+/* 📌 Ajuste del contenedor de la tabla */
 .tabla-container {
     width: 100%;
-    max-width: 1100px;
+    margin: 0 auto;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 15px;
-    overflow-x: auto;
-    margin-left: auto;
-    margin-right: 100px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* Habilita el scroll horizontal si es necesario */
 }
 
-/* 📌 Estilo de la tabla */
+/* 📌 Contenedor de la tabla con fondo blanco */
+.almacen-table-wrapper {
+    width: 100%;
+    max-width: 100%; /* Se asegura de que el contenedor ocupe todo el ancho disponible */
+    margin: 20px auto; /* Centra el contenedor */
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* Asegura que no haya desplazamiento horizontal */
+}
+
+/* 📌 Estilo de la tabla dentro del contenedor */
 .almacen-table table {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
     font-size: 14px;
+    table-layout: fixed; /* Asegura que las celdas se ajusten adecuadamente */
 }
 
 .almacen-table th, .almacen-table td {
@@ -118,7 +70,6 @@
     border-bottom: 1px solid #ddd;
 }
 
-/* 📌 Encabezado de la tabla */
 .almacen-table th {
     background-color: #2c3e50;
     color: white;
@@ -126,15 +77,16 @@
     font-size: 15px;
 }
 
-/* 📌 Estado de recepciones */
-.estado-recibido {
-    color: green;
-    font-weight: bold;
+/* 📌 Asegura que los botones y columnas se ajusten sin cortar */
+.almacen-table-wrapper table {
+    width: 100%;
+    table-layout: auto;
 }
 
-.estado-pendiente {
-    color: red;
-    font-weight: bold;
+
+.tabla-container::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
 }
 
 /* 📌 Ajuste de los botones en la tabla */
@@ -194,27 +146,14 @@
     text-align: center;
 }
 
-.modal-content label {
-    display: block;
-    margin: 10px 0 5px;
-    font-weight: bold;
-    text-align: left;
-}
-
-.modal-content input, .modal-content select {
-    width: 100%;
-    padding: 8px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
+/* 📌 Estilos del Footer del Modal */
 .modal-footer {
     display: flex;
     justify-content: space-between;
     margin-top: 15px;
 }
 
-.btn-guardar {
+.btn-guardar, .btn-cerrar {
     background-color: #28a745;
     color: white;
     padding: 8px 12px;
@@ -226,27 +165,15 @@
 
 .btn-cerrar {
     background-color: #dc3545;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s;
 }
 
-.btn-guardar:hover {
+.btn-guardar:hover, .btn-cerrar:hover {
     background-color: #218838;
-}
-
-.btn-cerrar:hover {
-    background-color: #c82333;
 }
 
 /* 📌 Responsive */
 @media (max-width: 1024px) {
     .recepcion-page {
-        width: 100%;
-        margin-left: 0;
         padding: 15px;
     }
 
@@ -263,7 +190,7 @@
     }
 
     .tabla-container {
-        width: 95%;
+        width: 100%;
         padding: 15px;
     }
 
@@ -271,7 +198,6 @@
         width: 90%;
     }
 }
-
 
 
 
@@ -284,7 +210,7 @@
     box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
     padding: 15px;
     max-width: 1100px;
-    margin: 10px auto;
+    margin: 20px auto;
     transition: all 0.3s ease-in-out;
 }
 
@@ -325,8 +251,7 @@
 .filtro-content {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
+    gap: 12px;
     justify-content: space-between;
     padding-top: 10px;
     transition: all 0.3s ease-in-out;
@@ -338,7 +263,7 @@
     width: auto;
     min-width: 160px;
     flex: 1;
-    padding: 8px;
+    padding: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
     font-size: 14px;

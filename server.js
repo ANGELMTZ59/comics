@@ -39,7 +39,7 @@ app.get("/api/empleado", (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(token.split(" ")[1], SECRET_KEY); // ✅ Verifica el token
+    decoded = jwt.verify(token.split(" ")[1], SECRET_KEY);
   } catch (err) {
     return res.status(401).json({ success: false, message: "Token inválido" });
   }
@@ -47,11 +47,12 @@ app.get("/api/empleado", (req, res) => {
   const id_usuario = decoded.id;
 
   const sql = `
-    SELECT id_usuario, email, id_rol, nombre AS nombre_usuario, 
-       puesto, telefono, fecha_contratacion
-FROM usuarios
-WHERE id_usuario = ?
-
+    SELECT u.id_usuario, u.email, u.id_rol, u.nombre AS nombre_usuario, 
+           u.telefono, u.fecha_contratacion,
+           r.nombre_rol AS puesto
+    FROM usuarios u
+    JOIN roles r ON u.id_rol = r.id_rol
+    WHERE u.id_usuario = ?
   `;
 
   db.query(sql, [id_usuario], (err, result) => {
@@ -85,69 +86,56 @@ app.get("/api/puestos", (req, res) => {
 // ✅ Inicio de sesión con validación de contraseña
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
-  console.log("📨 Email recibido:", email);
-  console.log("📨 Password recibido:", password);
 
   const sql = `
-    SELECT id_usuario, email, contraseña AS password, activo, nombre, puesto
-FROM usuarios
-WHERE email = ?
-
+    SELECT u.id_usuario, u.email, u.contraseña AS password, u.telefono, u.nombre, u.id_rol, u.activo, r.nombre_rol
+    FROM usuarios u
+    JOIN roles r ON u.id_rol = r.id_rol
+    WHERE u.email = ?
   `;
 
   db.query(sql, [email], async (err, results) => {
-    if (err) {
-      console.log("❌ Error en query:", err);
+    if (err)
       return res
         .status(500)
-        .json({ success: false, message: "Error en la base de datos" });
-    }
-
-    if (results.length === 0) {
-      console.log("❌ Usuario no encontrado con ese correo");
+        .json({ success: false, message: "Error en la BD" });
+    if (results.length === 0)
       return res
         .status(401)
         .json({ success: false, message: "Usuario no encontrado" });
-    }
 
     const usuario = results[0];
-    console.log("✅ Usuario encontrado:", usuario);
-
-    if (usuario.activo !== "si") {
-      console.log("⚠ Usuario inactivo");
+    const validPassword = await bcrypt.compare(password, usuario.password);
+    if (!validPassword)
       return res
-        .status(403)
-        .json({ success: false, message: "Cuenta inactiva" });
-    }
+        .status(401)
+        .json({ success: false, message: "Contraseña incorrecta" });
 
-    try {
-      const validPassword = await bcrypt.compare(password, usuario.password);
+    const token = jwt.sign(
+      {
+        id: usuario.id_usuario,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        id_rol: usuario.id_rol, // ✅ Este es el que necesitas
+      },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
 
-      console.log("🔐 Contraseña válida:", validPassword);
-
-      if (!validPassword) {
-        console.log("❌ Contraseña incorrecta");
-        return res
-          .status(401)
-          .json({ success: false, message: "Contraseña incorrecta" });
-      }
-
-      const token = jwt.sign(
-        {
-          id: usuario.id_usuario,
-          email: usuario.email,
-          nombre: usuario.nombre,
-          puesto: usuario.puesto,
-        },
-        SECRET_KEY,
-        { expiresIn: "1h" }
-      );
-
-      res.json({ success: true, token, usuario });
-    } catch (error) {
-      console.log("❌ Error interno:", error);
-      res.status(500).json({ success: false, message: "Error interno" });
-    }
+    res.json({
+      success: true,
+      token,
+      usuario: {
+        id_usuario: usuario.id_usuario,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        telefono: usuario.telefono,
+        id_rol: usuario.id_rol,
+        activo: usuario.activo,
+        fecha_contratacion: usuario.fecha_contratacion,
+        rol: usuario.nombre_rol,
+      },
+    });
   });
 });
 
@@ -891,8 +879,29 @@ app.get("/api/ordenesproveedor", (req, res) => {
 
 // Obtener recepciones
 app.get("/api/recepciones", (req, res) => {
-  db.query("SELECT * FROM recepcionesmercancia", (err, results) => {
-    if (err) return res.status(500).json({ success: false, error: err });
+  const sql = `
+    SELECT 
+      r.id_recepcion AS numero,
+      pr.nombre AS proveedor,
+      r.almacen,
+      r.fecha_recepcion,
+      r.fecha_documento,
+      r.numero_documento,
+      r.tipo_producto,
+      r.cantidad,
+      r.marca,
+      r.estatus,
+      r.total
+    FROM recepcionesmercancia r
+    JOIN proveedores pr ON r.id_proveedor = pr.id_proveedor
+    ORDER BY r.id_recepcion DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener recepciones:", err);
+      return res.status(500).json({ success: false });
+    }
     res.json({ success: true, recepciones: results });
   });
 });
@@ -901,12 +910,11 @@ app.get("/api/recepciones", (req, res) => {
 app.post("/api/recepciones", (req, res) => {
   const recepcion = req.body;
   const sql = `INSERT INTO recepcionesmercancia 
-  (numero, proveedor, almacen, fechaRecepcion, fechaDocumento, numDocumento, tipoProducto, cantidad, marca, estatus, total)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   const valores = [
-    recepcion.numero,
-    recepcion.proveedor,
+    recepcion.id_proveedor, // aquí debe ir el ID del proveedor
     recepcion.almacen,
     recepcion.fechaRecepcion,
     recepcion.fechaDocumento,
@@ -921,6 +929,111 @@ app.post("/api/recepciones", (req, res) => {
   db.query(sql, valores, (err, result) => {
     if (err) return res.status(500).json({ success: false, error: err });
     res.json({ success: true, insertId: result.insertId });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 GESTIONAR EMPLEADOS               */
+/* ------------------------------------- */
+
+// Obtener todos los empleados
+app.get("/api/usuarios", (req, res) => {
+  const sql = `
+    SELECT u.id_usuario, u.nombre, u.email, u.telefono, u.contraseña, u.activo,
+           r.nombre_rol AS rol
+    FROM usuarios u
+    JOIN roles r ON u.id_rol = r.id_rol
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("❌ Error en consulta:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error en la consulta" });
+    }
+
+    res.json({ success: true, usuarios: result });
+  });
+});
+
+// Agregar un nuevo empleado
+app.post("/api/usuarios", async (req, res) => {
+  console.log("📥 Datos recibidos para crear usuario:", req.body); // 🧪 DEBUG
+  const { nombre, email, password, telefono, id_rol, activo } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const sql = `
+    INSERT INTO usuarios (nombre, email, contraseña, telefono, id_rol, activo, fecha_contratacion, fecha_creacion)
+    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+  `;
+
+  const valores = [nombre, email, hashedPassword, telefono, id_rol, activo];
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error("❌ Error al insertar en la base de datos:", err); // ⛔️
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true, insertId: result.insertId });
+  });
+});
+
+// Actualizar empleado
+app.put("/api/usuarios/:id", async (req, res) => {
+  const { nombre, email, password, telefono, id_rol, activo } = req.body;
+
+  let sql, valores;
+
+  // Si se incluye la contraseña, la actualiza
+  if (password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    sql = `
+      UPDATE usuarios
+      SET nombre = ?, email = ?, contraseña = ?, telefono = ?, id_rol = ?, activo = ?
+      WHERE id_usuario = ?
+    `;
+    valores = [
+      nombre,
+      email,
+      hashedPassword,
+      telefono,
+      id_rol,
+      activo,
+      req.params.id,
+    ];
+  } else {
+    sql = `
+      UPDATE usuarios
+      SET nombre = ?, email = ?, telefono = ?, id_rol = ?, activo = ?
+      WHERE id_usuario = ?
+    `;
+    valores = [nombre, email, telefono, id_rol, activo, req.params.id];
+  }
+
+  db.query(sql, valores, (err) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true });
+  });
+});
+
+// Eliminar empleado
+app.delete("/api/usuarios/:id", (req, res) => {
+  const sql = "DELETE FROM usuarios WHERE id_usuario = ?";
+  db.query(sql, [req.params.id], (err) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true });
+  });
+});
+
+/* ------------------------------------- */
+/* 🔹 GESTION ROLES                     */
+/* ------------------------------------- */
+
+app.get("/api/roles", (req, res) => {
+  db.query("SELECT * FROM roles", (err, result) => {
+    if (err) return res.status(500).json({ success: false, error: err });
+    res.json({ success: true, roles: result });
   });
 });
 
