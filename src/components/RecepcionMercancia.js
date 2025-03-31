@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  FaFilter,
-  FaSearch,
-  FaPlus,
-  FaTruck,
-  FaTimes,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
+import { FaPlus, FaTruck, FaTimes, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 import Sidebar from "./sidebar";
 import "../mercancia.css";
@@ -18,7 +10,7 @@ const RecepcionMercancia = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(true);
   const [productos, setProductos] = useState([]);
-
+  const [busqueda, setBusqueda] = useState("");
   const [nuevaRecepcion, setNuevaRecepcion] = useState({
     numero: "",
     proveedor: "",
@@ -48,8 +40,12 @@ const RecepcionMercancia = () => {
   const obtenerRecepciones = async () => {
     try {
       const res = await axios.get(`${API_URL}/recepciones`);
+      console.log("Datos recibidos del servidor:", res.data); // Log the entire response
       if (res.data.success) {
-        setProductos(res.data.recepciones);
+        setProductos(res.data.recepciones); // Update state with fetched data
+        console.log("Productos actualizados:", res.data.recepciones); // Log updated state
+      } else {
+        console.warn("⚠ No se encontraron recepciones:", res.data.message);
       }
     } catch (error) {
       console.error("❌ Error al obtener recepciones:", error);
@@ -62,14 +58,81 @@ const RecepcionMercancia = () => {
 
   const handleGuardar = async () => {
     try {
-      const res = await axios.post(`${API_URL}/recepciones`, nuevaRecepcion);
-      if (res.data.success) {
-        obtenerRecepciones();
-        setMostrarFormulario(false);
+      // Verifica que el id_proveedor no esté vacío o nulo
+      if (!nuevaRecepcion.id_proveedor) {
+        alert("Por favor, seleccione un proveedor.");
+        return;
+      }
+
+      if (nuevaRecepcion.id_recepcion) {
+        // Si existe id_recepcion, actualizamos el registro
+        const res = await axios.put(
+          `${API_URL}/recepciones/${nuevaRecepcion.id_recepcion}`,
+          nuevaRecepcion
+        );
+        if (res.data.success) {
+          console.log("Recepción actualizada correctamente.");
+          obtenerRecepciones(); // Refrescar la lista
+          setMostrarFormulario(false);
+        }
+      } else {
+        // Si no existe id_recepcion, creamos un nuevo registro
+        const res = await axios.post(`${API_URL}/recepciones`, nuevaRecepcion);
+        if (res.data.success) {
+          console.log("Nueva recepción creada correctamente.");
+          obtenerRecepciones(); // Refrescar la lista
+          setMostrarFormulario(false);
+        }
       }
     } catch (error) {
       console.error("❌ Error al guardar recepción:", error);
+      alert("Ocurrió un error al guardar la recepción.");
     }
+  };
+
+  const handleEditar = (producto) => {
+    setNuevaRecepcion({
+      id_recepcion: producto.id_recepcion, // Ensure this ID is present
+      numero: producto.numero, // Map numero correctly
+      id_proveedor: producto.id_proveedor, // Use id_proveedor instead of proveedor
+      almacen: producto.almacen,
+      fechaRecepcion: producto.fecha_recepcion, // Match the backend field name
+      fechaDocumento: producto.fecha_documento, // Match the backend field name
+      numDocumento: producto.numero_documento, // Match the backend field name
+      tipoProducto: producto.tipo_producto, // Match the backend field name
+      cantidad: producto.cantidad,
+      marca: producto.marca,
+      estatus: producto.estatus,
+      total: producto.total,
+    });
+    setMostrarFormulario(true); // Show the edit form
+  };
+
+  const handleEliminar = async (id) => {
+    if (!id) {
+      console.error("❌ El ID de la recepción es inválido."); // Log the invalid ID
+      alert(
+        "El ID de la recepción es inválido. Por favor, intente nuevamente."
+      );
+      return;
+    }
+    console.log("ID de la recepción que se va a eliminar:", id); // Log the valid ID
+
+    try {
+      const res = await axios.delete(`${API_URL}/recepciones/${id}`);
+      if (res.data.success) {
+        console.log("Eliminación exitosa, refrescando lista de recepciones");
+        obtenerRecepciones(); // Refresh the list after deletion
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar recepción:", error);
+      alert("Ocurrió un error al eliminar la recepción");
+    }
+  };
+
+  // Función de búsqueda que actualiza el estado de búsqueda
+  const handleBuscar = (e) => {
+    setBusqueda(e.target.value);
   };
 
   return (
@@ -98,6 +161,7 @@ const RecepcionMercancia = () => {
                   </option>
                 ))}
               </select>
+
               <input
                 type="text"
                 name="almacen"
@@ -181,59 +245,15 @@ const RecepcionMercancia = () => {
           </div>
         </div>
 
-        {/* Filtros */}
+        {/* Barra de búsqueda */}
         <div className="filtro-container">
-          <div
-            className="filtro-header"
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-          >
-            <div className="filtro-title">
-              <FaFilter className="filtro-icon" />
-              <h3>Filtros</h3>
-              <span className="filtro-arrow">
-                {mostrarFiltros ? <FaChevronUp /> : <FaChevronDown />}
-              </span>
-            </div>
-          </div>
-
-          {mostrarFiltros && (
-            <>
-              <div className="filtro-content">
-                <input
-                  type="date"
-                  name="fechaCreacion"
-                  placeholder="Fecha de Creación"
-                />
-                <input
-                  type="text"
-                  name="numeroDocumento"
-                  placeholder="Número de Documento"
-                />
-                <input
-                  type="text"
-                  name="palabraClave"
-                  placeholder="Palabra Clave"
-                />
-                <select name="tipoProducto">
-                  <option value="">Seleccionar tipo</option>
-                  <option value="Comics">Comics</option>
-                  <option value="Figuras">Figuras</option>
-                </select>
-                <select name="estatus">
-                  <option value="">Seleccionar estatus</option>
-                  <option value="Recibido">Recibido</option>
-                  <option value="Pendiente">Pendiente</option>
-                </select>
-                <input type="text" name="proveedor" placeholder="Proveedor" />
-                <input type="text" name="almacen" placeholder="Almacén" />
-              </div>
-              <div className="filtro-actions">
-                <button className="btn-buscar">
-                  <FaSearch /> Buscar
-                </button>
-              </div>
-            </>
-          )}
+          <input
+            type="text"
+            placeholder="Buscar por proveedor, tipo de producto..."
+            value={busqueda}
+            onChange={handleBuscar}
+            className="busqueda-input"
+          />
         </div>
 
         <div className="almacen-table-wrapper">
@@ -255,21 +275,50 @@ const RecepcionMercancia = () => {
                 </tr>
               </thead>
               <tbody>
-                {productos.map((producto, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{producto.proveedor}</td>
-                    <td>{producto.almacen}</td>
-                    <td>{producto.fecha_recepcion?.substring(0, 10)}</td>
-                    <td>{producto.fecha_documento?.substring(0, 10)}</td>
-                    <td>{producto.numero_documento}</td>
-                    <td>{producto.tipo_producto}</td>
-                    <td>{producto.cantidad}</td>
-                    <td>{producto.marca}</td>
-                    <td>{producto.estatus}</td>
-                    <td>{Number(producto.total).toFixed(2)}</td>
+                {productos.length === 0 ? (
+                  <tr>
+                    <td colSpan="11">No hay registros disponibles.</td>
                   </tr>
-                ))}
+                ) : (
+                  productos.map((producto) => {
+                    if (!producto.id_recepcion) {
+                      console.warn("⚠ Producto sin id_recepcion:", producto); // Warn if id_recepcion is missing
+                      return null; // Skip rendering this row
+                    }
+                    return (
+                      <tr key={producto.id_recepcion}>
+                        {/* Render product details */}
+                        <td>{producto.numero}</td>
+                        <td>{producto.proveedor}</td>
+                        <td>{producto.almacen}</td>
+                        <td>{producto.fecha_recepcion?.substring(0, 10)}</td>
+                        <td>{producto.fecha_documento?.substring(0, 10)}</td>
+                        <td>{producto.numero_documento}</td>
+                        <td>{producto.tipo_producto}</td>
+                        <td>{producto.cantidad}</td>
+                        <td>{producto.marca}</td>
+                        <td>{producto.estatus}</td>
+                        <td>{Number(producto.total).toFixed(2)}</td>
+                        <td>
+                          <button
+                            className="btn-accion editar"
+                            onClick={() => handleEditar(producto)} // Pass the full product object
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="btn-accion eliminar"
+                            onClick={() =>
+                              handleEliminar(producto.id_recepcion)
+                            } // Pass id_recepcion
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

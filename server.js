@@ -879,56 +879,155 @@ app.get("/api/ordenesproveedor", (req, res) => {
 
 // Obtener recepciones
 app.get("/api/recepciones", (req, res) => {
-  const sql = `
-    SELECT 
-      r.id_recepcion AS numero,
-      pr.nombre AS proveedor,
-      r.almacen,
-      r.fecha_recepcion,
-      r.fecha_documento,
-      r.numero_documento,
-      r.tipo_producto,
-      r.cantidad,
-      r.marca,
-      r.estatus,
-      r.total
+  const {
+    numeroDocumento,
+    palabraClave,
+    tipoProducto,
+    estatus,
+    proveedor,
+    almacen,
+  } = req.query;
+
+  let sql = `
+    SELECT r.id_recepcion,
+           r.numero AS numero, -- Ensure numero is directly selected
+           pr.nombre AS proveedor,
+           r.almacen,
+           r.fecha_recepcion,
+           r.fecha_documento,
+           r.numero_documento,
+           r.tipo_producto,
+           r.cantidad,
+           r.marca,
+           r.estatus,
+           r.total
     FROM recepcionesmercancia r
     JOIN proveedores pr ON r.id_proveedor = pr.id_proveedor
-    ORDER BY r.id_recepcion DESC
+    WHERE 1=1
   `;
+
+  if (numeroDocumento)
+    sql += ` AND r.numero_documento LIKE '%${numeroDocumento}%'`;
+  if (palabraClave) sql += ` AND r.marca LIKE '%${palabraClave}%'`;
+  if (tipoProducto) sql += ` AND r.tipo_producto = '${tipoProducto}'`;
+  if (estatus) sql += ` AND r.estatus = '${estatus}'`;
+  if (proveedor) sql += ` AND pr.nombre LIKE '%${proveedor}%'`;
+  if (almacen) sql += ` AND r.almacen LIKE '%${almacen}%'`;
+
+  sql += " ORDER BY r.id_recepcion DESC";
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error al obtener recepciones:", err);
-      return res.status(500).json({ success: false });
+      console.error("❌ Error en la consulta SQL:", err); // Log the SQL error
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error en la consulta SQL.",
+          error: err.message,
+        });
     }
     res.json({ success: true, recepciones: results });
   });
 });
 
-// Agregar recepción
+// Agregar una recepción
 app.post("/api/recepciones", (req, res) => {
-  const recepcion = req.body;
-  const sql = `INSERT INTO recepcionesmercancia 
-  (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const {
+    id_proveedor,
+    almacen,
+    fecha_recepcion,
+    fecha_documento,
+    numero_documento,
+    tipo_producto,
+    cantidad,
+    marca,
+    estatus,
+    total,
+  } = req.body;
+
+  const sql = `
+    INSERT INTO recepcionesmercancia 
+    (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
   const valores = [
-    recepcion.id_proveedor, // aquí debe ir el ID del proveedor
-    recepcion.almacen,
-    recepcion.fechaRecepcion,
-    recepcion.fechaDocumento,
-    recepcion.numDocumento,
-    recepcion.tipoProducto,
-    recepcion.cantidad,
-    recepcion.marca,
-    recepcion.estatus,
-    recepcion.total,
+    id_proveedor,
+    almacen,
+    fecha_recepcion,
+    fecha_documento,
+    numero_documento,
+    tipo_producto,
+    cantidad,
+    marca,
+    estatus,
+    total,
+  ];
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error("❌ Error al insertar recepción:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true, insertId: result.insertId });
+  });
+});
+
+// Editar una recepción
+app.put("/api/recepciones/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    id_proveedor,
+    almacen,
+    fecha_recepcion,
+    fecha_documento,
+    numero_documento,
+    tipo_producto,
+    cantidad,
+    marca,
+    estatus,
+    total,
+  } = req.body;
+
+  const sql = `
+    UPDATE recepcionesmercancia
+    SET id_proveedor = ?, almacen = ?, fecha_recepcion = ?, fecha_documento = ?, numero_documento = ?, tipo_producto = ?, cantidad = ?, marca = ?, estatus = ?, total = ?
+    WHERE id_recepcion = ?
+  `;
+
+  const valores = [
+    id_proveedor,
+    almacen,
+    fecha_recepcion,
+    fecha_documento,
+    numero_documento,
+    tipo_producto,
+    cantidad,
+    marca,
+    estatus,
+    total,
+    id,
   ];
 
   db.query(sql, valores, (err, result) => {
     if (err) return res.status(500).json({ success: false, error: err });
-    res.json({ success: true, insertId: result.insertId });
+    res.json({ success: true });
+  });
+});
+
+// Eliminar una recepción
+app.delete("/api/recepciones/:id", (req, res) => {
+  const { id } = req.params; // Este ID debe ser recibido correctamente del frontend
+  console.log("ID recibido para eliminación:", id); // Verifica que el ID llegue correctamente
+  const sql = "DELETE FROM recepcionesmercancia WHERE id_recepcion = ?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar recepción:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    console.log("Registro eliminado con éxito:", result);
+    res.json({ success: true });
   });
 });
 
