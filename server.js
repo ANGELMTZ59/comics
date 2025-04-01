@@ -890,7 +890,7 @@ app.get("/api/recepciones", (req, res) => {
 
   let sql = `
     SELECT r.id_recepcion,
-           r.numero AS numero, -- Ensure numero is directly selected
+           r.numero_documento AS numero, -- Use numero_documento instead of numero
            pr.nombre AS proveedor,
            r.almacen,
            r.fecha_recepcion,
@@ -919,14 +919,14 @@ app.get("/api/recepciones", (req, res) => {
   db.query(sql, (err, results) => {
     if (err) {
       console.error("❌ Error en la consulta SQL:", err); // Log the SQL error
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Error en la consulta SQL.",
-          error: err.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Error en la consulta SQL.",
+        error: err.message,
+      });
     }
+
+    console.log("📋 Datos obtenidos desde la BD:", results); // Log the fetched data
     res.json({ success: true, recepciones: results });
   });
 });
@@ -946,6 +946,24 @@ app.post("/api/recepciones", (req, res) => {
     total,
   } = req.body;
 
+  // Validar campos obligatorios
+  if (
+    !id_proveedor ||
+    !almacen ||
+    !fecha_recepcion ||
+    !numero_documento ||
+    !tipo_producto ||
+    !cantidad ||
+    !marca ||
+    !estatus ||
+    !total
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Todos los campos son obligatorios.",
+    });
+  }
+
   const sql = `
     INSERT INTO recepcionesmercancia 
     (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
@@ -956,7 +974,7 @@ app.post("/api/recepciones", (req, res) => {
     id_proveedor,
     almacen,
     fecha_recepcion,
-    fecha_documento,
+    fecha_documento || null, // Permitir null para fecha_documento
     numero_documento,
     tipo_producto,
     cantidad,
@@ -990,6 +1008,27 @@ app.put("/api/recepciones/:id", (req, res) => {
     total,
   } = req.body;
 
+  // Log the data received from the frontend
+  console.log("📥 Datos recibidos del frontend:", req.body);
+
+  // Validar campos obligatorios
+  if (
+    !id_proveedor ||
+    !almacen ||
+    !fecha_recepcion ||
+    !numero_documento ||
+    !tipo_producto ||
+    !cantidad ||
+    !marca ||
+    !estatus ||
+    !total
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Todos los campos son obligatorios.",
+    });
+  }
+
   const sql = `
     UPDATE recepcionesmercancia
     SET id_proveedor = ?, almacen = ?, fecha_recepcion = ?, fecha_documento = ?, numero_documento = ?, tipo_producto = ?, cantidad = ?, marca = ?, estatus = ?, total = ?
@@ -1000,7 +1039,7 @@ app.put("/api/recepciones/:id", (req, res) => {
     id_proveedor,
     almacen,
     fecha_recepcion,
-    fecha_documento,
+    fecha_documento || null, // Permitir null para fecha_documento
     numero_documento,
     tipo_producto,
     cantidad,
@@ -1011,7 +1050,10 @@ app.put("/api/recepciones/:id", (req, res) => {
   ];
 
   db.query(sql, valores, (err, result) => {
-    if (err) return res.status(500).json({ success: false, error: err });
+    if (err) {
+      console.error("❌ Error al actualizar recepción:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
     res.json({ success: true });
   });
 });

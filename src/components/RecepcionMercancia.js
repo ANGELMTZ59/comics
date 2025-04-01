@@ -40,10 +40,13 @@ const RecepcionMercancia = () => {
   const obtenerRecepciones = async () => {
     try {
       const res = await axios.get(`${API_URL}/recepciones`);
-      console.log("Datos recibidos del servidor:", res.data); // Log the entire response
+      console.log("📋 Datos recibidos del servidor:", res.data); // Log the entire response
       if (res.data.success) {
         setProductos(res.data.recepciones); // Update state with fetched data
-        console.log("Productos actualizados:", res.data.recepciones); // Log updated state
+        console.log(
+          "✅ Productos actualizados en el estado:",
+          res.data.recepciones
+        ); // Log updated state
       } else {
         console.warn("⚠ No se encontraron recepciones:", res.data.message);
       }
@@ -58,17 +61,68 @@ const RecepcionMercancia = () => {
 
   const handleGuardar = async () => {
     try {
-      // Verifica que el id_proveedor no esté vacío o nulo
-      if (!nuevaRecepcion.id_proveedor) {
+      // Map frontend field names to backend field names
+      const payload = {
+        id_recepcion: nuevaRecepcion.id_recepcion,
+        numero_documento: nuevaRecepcion.numDocumento,
+        id_proveedor: nuevaRecepcion.id_proveedor,
+        almacen: nuevaRecepcion.almacen,
+        fecha_recepcion: nuevaRecepcion.fechaRecepcion,
+        fecha_documento: nuevaRecepcion.fechaDocumento,
+        tipo_producto: nuevaRecepcion.tipoProducto,
+        cantidad: nuevaRecepcion.cantidad,
+        marca: nuevaRecepcion.marca,
+        estatus: nuevaRecepcion.estatus,
+        total: nuevaRecepcion.total,
+      };
+
+      // Log the payload being sent to the backend
+      console.log("📤 Payload enviado al backend:", payload);
+
+      // Validar campos obligatorios
+      if (!payload.id_proveedor) {
         alert("Por favor, seleccione un proveedor.");
         return;
       }
+      if (!payload.almacen) {
+        alert("Por favor, ingrese el almacén.");
+        return;
+      }
+      if (!payload.fecha_recepcion) {
+        alert("Por favor, ingrese la fecha de recepción.");
+        return;
+      }
+      if (!payload.numero_documento) {
+        alert("Por favor, ingrese el número de documento.");
+        return;
+      }
+      if (!payload.tipo_producto) {
+        alert("Por favor, seleccione el tipo de producto.");
+        return;
+      }
+      if (!payload.cantidad || payload.cantidad <= 0) {
+        alert("Por favor, ingrese una cantidad válida.");
+        return;
+      }
+      if (!payload.marca) {
+        alert("Por favor, ingrese la marca.");
+        return;
+      }
+      if (!payload.estatus) {
+        alert("Por favor, seleccione el estatus.");
+        return;
+      }
+      if (!payload.total || payload.total <= 0) {
+        alert("Por favor, ingrese un total válido.");
+        return;
+      }
 
-      if (nuevaRecepcion.id_recepcion) {
-        // Si existe id_recepcion, actualizamos el registro
+      // Crear o actualizar recepción
+      if (payload.id_recepcion) {
+        // Actualizar registro existente
         const res = await axios.put(
-          `${API_URL}/recepciones/${nuevaRecepcion.id_recepcion}`,
-          nuevaRecepcion
+          `${API_URL}/recepciones/${payload.id_recepcion}`,
+          payload
         );
         if (res.data.success) {
           console.log("Recepción actualizada correctamente.");
@@ -76,8 +130,8 @@ const RecepcionMercancia = () => {
           setMostrarFormulario(false);
         }
       } else {
-        // Si no existe id_recepcion, creamos un nuevo registro
-        const res = await axios.post(`${API_URL}/recepciones`, nuevaRecepcion);
+        // Crear nuevo registro
+        const res = await axios.post(`${API_URL}/recepciones`, payload);
         if (res.data.success) {
           console.log("Nueva recepción creada correctamente.");
           obtenerRecepciones(); // Refrescar la lista
@@ -94,12 +148,14 @@ const RecepcionMercancia = () => {
     setNuevaRecepcion({
       id_recepcion: producto.id_recepcion, // Ensure this ID is present
       numero: producto.numero, // Map numero correctly
-      id_proveedor: producto.id_proveedor, // Use id_proveedor instead of proveedor
+      id_proveedor:
+        proveedores.find((prov) => prov.nombre === producto.proveedor)
+          ?.id_proveedor || "", // Map id_proveedor based on the provider name
       almacen: producto.almacen,
-      fechaRecepcion: producto.fecha_recepcion, // Match the backend field name
-      fechaDocumento: producto.fecha_documento, // Match the backend field name
-      numDocumento: producto.numero_documento, // Match the backend field name
-      tipoProducto: producto.tipo_producto, // Match the backend field name
+      fechaRecepcion: producto.fecha_recepcion?.substring(0, 10), // Format date for input
+      fechaDocumento: producto.fecha_documento?.substring(0, 10), // Format date for input
+      numDocumento: producto.numero_documento, // Map numero_documento
+      tipoProducto: producto.tipo_producto, // Map tipo_producto
       cantidad: producto.cantidad,
       marca: producto.marca,
       estatus: producto.estatus,
