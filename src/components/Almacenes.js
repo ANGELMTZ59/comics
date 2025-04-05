@@ -10,6 +10,7 @@ const Almacenes = () => {
   const [productos, setProductos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isEditing, setIsEditing] = useState(false); // Nuevo estado
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const [productoForm, setProductoForm] = useState({
@@ -26,9 +27,29 @@ const Almacenes = () => {
     id_proveedor: "",
   });
 
+  // 💾 Mostrar el formulario de nuevo producto
+  const agregarProducto = () => {
+    setProductoForm({
+      id_producto: null,
+      nombre: "",
+      descripcion: "",
+      categoria: "comic",
+      stock_actual: 0,
+      stock_minimo: 0,
+      precio: 0,
+      editorial_o_marca: "",
+      fecha_lanzamiento: "",
+      imagen_url: "",
+      id_proveedor: "",
+    });
+    setIsEditing(false); // Modo agregar
+    setMostrarFormulario(true);
+  };
+
   // 🚀 Cargar productos y proveedores
   useEffect(() => {
-    fetchProductos();
+    fetchProductos(); // Para cargar productos
+    fetchProveedores(); // Asegúrate de que los proveedores se carguen
   }, []);
 
   const fetchProductos = async () => {
@@ -59,24 +80,29 @@ const Almacenes = () => {
     }
 
     try {
-      if (productoForm.id_producto) {
+      if (isEditing) {
+        // Actualizar producto
         await axios.put(
           `${API_URL}/productos/${productoForm.id_producto}`,
           productoForm
         );
       } else {
+        // Agregar nuevo producto
         await axios.post(`${API_URL}/productos`, productoForm);
       }
       fetchProductos();
       setMostrarFormulario(false);
+      setIsEditing(false); // Resetear el estado
     } catch (err) {
       console.error("❌ Error al guardar producto:", err);
+      alert("Error al guardar el producto.");
     }
   };
 
   // 📝 Editar
   const editarProducto = (producto) => {
     setProductoForm(producto);
+    setIsEditing(true); // Activar edición
     setMostrarFormulario(true);
   };
 
@@ -105,10 +131,7 @@ const Almacenes = () => {
         <h2>
           <FaBoxOpen /> Gestión de Productos en Almacén
         </h2>
-        <button
-          className="btn-agregar"
-          onClick={() => setMostrarFormulario(true)}
-        >
+        <button className="btn-agregar" onClick={agregarProducto}>
           <FaPlus /> Agregar Producto
         </button>
       </div>
@@ -152,7 +175,12 @@ const Almacenes = () => {
                 <td>{p.stock_minimo}</td>
                 <td>${parseFloat(p.precio || 0).toFixed(2)}</td>
                 <td>{p.editorial_o_marca}</td>
-                <td>{p.fecha_lanzamiento || "N/A"}</td>
+                <td>
+                  {p.fecha_lanzamiento
+                    ? new Date(p.fecha_lanzamiento).toLocaleDateString("es-ES")
+                    : "N/A"}
+                </td>{" "}
+                {/* Formateo de la fecha */}
                 <td>{p.proveedor || "N/A"}</td>
                 <td>
                   {p.imagen_url ? (
@@ -195,7 +223,6 @@ const Almacenes = () => {
                 setProductoForm({ ...productoForm, nombre: e.target.value })
               }
             />
-
             <label>Descripción:</label>
             <input
               type="text"
@@ -207,7 +234,6 @@ const Almacenes = () => {
                 })
               }
             />
-
             <label>Categoría:</label>
             <select
               value={productoForm.categoria}
@@ -218,7 +244,6 @@ const Almacenes = () => {
               <option value="comic">Comic</option>
               <option value="figura de colección">Figura de colección</option>
             </select>
-
             <label>Stock Actual:</label>
             <input
               type="number"
@@ -230,7 +255,6 @@ const Almacenes = () => {
                 })
               }
             />
-
             <label>Stock Mínimo:</label>
             <input
               type="number"
@@ -242,7 +266,6 @@ const Almacenes = () => {
                 })
               }
             />
-
             <label>Precio:</label>
             <input
               type="number"
@@ -251,7 +274,6 @@ const Almacenes = () => {
                 setProductoForm({ ...productoForm, precio: e.target.value })
               }
             />
-
             <label>Marca/Editorial:</label>
             <input
               type="text"
@@ -263,7 +285,6 @@ const Almacenes = () => {
                 })
               }
             />
-
             <label>Fecha de Lanzamiento:</label>
             <input
               type="date"
@@ -275,16 +296,24 @@ const Almacenes = () => {
                 })
               }
             />
-
-            <label>URL de Imagen:</label>
+            <label>Imagen:</label>
             <input
-              type="text"
-              value={productoForm.imagen_url}
-              onChange={(e) =>
-                setProductoForm({ ...productoForm, imagen_url: e.target.value })
-              }
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setProductoForm({
+                      ...productoForm,
+                      imagen_url: reader.result, // Guardamos la imagen en base64
+                    });
+                  };
+                  reader.readAsDataURL(file); // Convertir la imagen a base64
+                }
+              }}
             />
-
             <label>Proveedor:</label>
             <select
               value={productoForm.id_proveedor}
@@ -303,15 +332,18 @@ const Almacenes = () => {
               ))}
             </select>
 
-            <button className="btn-guardar" onClick={guardarProducto}>
-              Guardar
-            </button>
-            <button
-              className="btn-cerrar"
-              onClick={() => setMostrarFormulario(false)}
-            >
-              Cancelar
-            </button>
+            {/* Botones de Guardar y Cancelar */}
+            <div className="modal-buttons">
+              <button className="btn-guardar" onClick={guardarProducto}>
+                Guardar
+              </button>
+              <button
+                className="btn-cerrar"
+                onClick={() => setMostrarFormulario(false)}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -732,43 +732,95 @@ app.get("/api/productos", (req, res) => {
   });
 });
 
+// Configurar CORS para que permita solicitudes de tu frontend en localhost:3000
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Permitir solicitudes desde localhost:3000
+    methods: ["GET", "POST", "PUT", "DELETE"], // Los métodos permitidos
+    allowedHeaders: ["Content-Type", "Authorization"], // Los encabezados permitidos
+  })
+);
+
 // Agregar producto
-app.post("/api/productos", (req, res) => {
+const multer = require("multer");
+const path = require("path");
+
+// Configurar multer para guardar imágenes en una carpeta específica
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./uploads/images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Guarda la imagen con un nombre único
+  },
+});
+
+const upload = multer({ storage });
+
+// Subir la imagen
+// Obtener el siguiente número de documento automáticamente
+app.post("/api/recepciones", (req, res) => {
   const {
-    nombre,
-    descripcion,
-    categoria,
-    stock_actual,
-    precio,
-    editorial_o_marca,
-    fecha_lanzamiento,
+    id_proveedor,
+    almacen,
+    fecha_recepcion,
+    fecha_documento,
+    tipo_producto,
+    cantidad,
+    marca,
+    estatus,
+    total,
   } = req.body;
 
-  const sql = `
-    INSERT INTO productos 
-    (nombre, descripcion, categoria, stock_actual, precio, editorial_o_marca, fecha_lanzamiento)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
+  // Obtener el último número de documento
+  const sql =
+    "SELECT numero_documento FROM recepcionesmercancia ORDER BY id_recepcion DESC LIMIT 1";
 
-  db.query(
-    sql,
-    [
-      nombre,
-      descripcion,
-      categoria,
-      stock_actual,
-      precio,
-      editorial_o_marca,
-      fecha_lanzamiento,
-    ],
-    (err, result) => {
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener último número de documento:", err);
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error al obtener último número de documento.",
+        });
+    }
+
+    let nuevoNumeroDocumento = "0001"; // Valor por defecto si no hay datos
+    if (results.length > 0) {
+      const ultimoNumero = results[0].numero_documento;
+      const siguienteNumero = parseInt(ultimoNumero) + 1;
+      nuevoNumeroDocumento = siguienteNumero.toString().padStart(4, "0"); // Generar el nuevo número de documento con ceros a la izquierda
+    }
+
+    // Ahora insertar la nueva recepción con el número generado automáticamente
+    const sqlInsert = `
+      INSERT INTO recepcionesmercancia
+      (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const valores = [
+      id_proveedor,
+      almacen,
+      fecha_recepcion,
+      fecha_documento || null,
+      nuevoNumeroDocumento, // Usamos el número generado automáticamente
+      tipo_producto,
+      cantidad,
+      marca,
+      estatus,
+      total,
+    ];
+
+    db.query(sqlInsert, valores, (err, result) => {
       if (err) {
-        console.error("❌ Error al insertar producto:", err);
+        console.error("❌ Error al insertar recepción:", err);
         return res.status(500).json({ success: false, error: err });
       }
       res.json({ success: true, insertId: result.insertId });
-    }
-  );
+    });
+  });
 });
 
 app.put("/api/productos/:id", (req, res) => {
@@ -932,13 +984,13 @@ app.get("/api/recepciones", (req, res) => {
 });
 
 // Agregar una recepción
+// Obtener el último número de documento y número de recepción
 app.post("/api/recepciones", (req, res) => {
   const {
     id_proveedor,
     almacen,
     fecha_recepcion,
     fecha_documento,
-    numero_documento,
     tipo_producto,
     cantidad,
     marca,
@@ -946,50 +998,67 @@ app.post("/api/recepciones", (req, res) => {
     total,
   } = req.body;
 
-  // Validar campos obligatorios
-  if (
-    !id_proveedor ||
-    !almacen ||
-    !fecha_recepcion ||
-    !numero_documento ||
-    !tipo_producto ||
-    !cantidad ||
-    !marca ||
-    !estatus ||
-    !total
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: "Todos los campos son obligatorios.",
-    });
-  }
+  // Generar número de documento automáticamente
+  db.query(
+    "SELECT MAX(numero_documento) AS max_doc FROM recepcionesmercancia",
+    (err, results) => {
+      if (err) {
+        console.error(
+          "❌ Error al obtener el último número de documento:",
+          err
+        );
+        return res.status(500).json({ success: false, error: err });
+      }
+      const nuevoNumeroDocumento = results[0].max_doc
+        ? parseInt(results[0].max_doc) + 1
+        : 1;
 
-  const sql = `
-    INSERT INTO recepcionesmercancia 
-    (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+      // Generar número de recepción
+      db.query(
+        "SELECT MAX(numero) AS max_recepcion FROM recepcionesmercancia",
+        (err2, results2) => {
+          if (err2) {
+            console.error(
+              "❌ Error al obtener el último número de recepción:",
+              err2
+            );
+            return res.status(500).json({ success: false, error: err2 });
+          }
+          const nuevoNumeroRecepcion = results2[0].max_recepcion
+            ? parseInt(results2[0].max_recepcion) + 1
+            : 1;
 
-  const valores = [
-    id_proveedor,
-    almacen,
-    fecha_recepcion,
-    fecha_documento || null, // Permitir null para fecha_documento
-    numero_documento,
-    tipo_producto,
-    cantidad,
-    marca,
-    estatus,
-    total,
-  ];
+          const sql = `
+            INSERT INTO recepcionesmercancia 
+            (id_proveedor, almacen, fecha_recepcion, fecha_documento, numero_documento, tipo_producto, cantidad, marca, estatus, total, numero)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
 
-  db.query(sql, valores, (err, result) => {
-    if (err) {
-      console.error("❌ Error al insertar recepción:", err);
-      return res.status(500).json({ success: false, error: err });
+          const valores = [
+            id_proveedor,
+            almacen,
+            fecha_recepcion,
+            fecha_documento || null,
+            nuevoNumeroDocumento, // Utilizamos el nuevo número de documento generado
+            tipo_producto,
+            cantidad,
+            marca,
+            estatus,
+            total,
+            nuevoNumeroRecepcion, // Utilizamos el nuevo número de recepción generado
+          ];
+
+          db.query(sql, valores, (err3, result) => {
+            if (err3) {
+              console.error("❌ Error al insertar recepción:", err3);
+              return res.status(500).json({ success: false, error: err3 });
+            }
+            res.json({ success: true, insertId: result.insertId });
+          });
+        }
+      );
     }
-    res.json({ success: true, insertId: result.insertId });
-  });
+  );
 });
 
 // Editar una recepción

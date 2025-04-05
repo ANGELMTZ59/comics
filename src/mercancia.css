@@ -204,51 +204,43 @@
 /* ------------ FILTROS.CSS ------------ */
 
 /* 📌 Contenedor de los filtros */
+/* Estilo general de la barra de búsqueda */
 .filtro-container {
-    padding: 10px;
-    background-color: #f9f9f9;
-  }
-  
-  .search-input-container {
     display: flex;
-    align-items: center;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 5px;
-    background-color: #fff;
-    width: 100%;
-    max-width: 500px;
+    justify-content: center;
+    margin: 20px 0; /* Espaciado superior e inferior */
   }
   
-  .search-icon {
-    font-size: 20px;
-    color: #888;
-    margin-right: 10px;
+  .busqueda-input {
+    width: 50%; /* Ajusta el tamaño de la barra de búsqueda */
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc; /* Borde gris claro */
+    border-radius: 5px; /* Bordes redondeados */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    outline: none; /* Elimina el borde azul al hacer clic */
+    transition: all 0.3s ease-in-out; /* Transición suave al hacer hover */
   }
   
-  .search-input {
-    border: none;
-    outline: none;
-    width: 100%;
-    padding: 5px;
-    font-size: 14px;
-    color: #333;
+  .busqueda-input::placeholder {
+    color: #888; /* Color de texto del placeholder */
   }
   
-  .search-input::placeholder {
-    color: #aaa;
+  .busqueda-input:focus {
+    border-color: #007bff; /* Cambia el borde cuando está enfocado */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Sombra de enfoque */
   }
   
-  .btn-buscar {
-    background-color: #007bff;
-    color: white;
-    padding: 5px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+  .busqueda-input:hover {
+    border-color: #007bff; /* Cambia el borde cuando pasa el mouse */
   }
   
-  .btn-buscar:hover {
-    background-color: #0056b3;
+  /* Estilo de los iconos */
+  .busqueda-input::-webkit-search-cancel-button {
+    display: none;
+  }
+  
+  .busqueda-input::-webkit-search-decoration {
+    display: none;
   }
   
