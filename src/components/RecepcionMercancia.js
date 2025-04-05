@@ -11,6 +11,7 @@ const RecepcionMercancia = () => {
   const [mostrarFiltros, setMostrarFiltros] = useState(true);
   const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
+  const [productosFiltrados, setProductosFiltrados] = useState([]); // Add state for filtered products
   const [nuevaRecepcion, setNuevaRecepcion] = useState({
     numero: "",
     proveedor: "",
@@ -36,6 +37,20 @@ const RecepcionMercancia = () => {
     // 🔧 Agregar esta línea para cargar los productos
     obtenerRecepciones();
   }, []);
+
+  useEffect(() => {
+    // Filter products whenever the search query changes
+    const filtered = productos.filter((producto) => {
+      const searchQuery = busqueda.toLowerCase();
+      return (
+        producto.proveedor.toLowerCase().includes(searchQuery) ||
+        producto.tipo_producto.toLowerCase().includes(searchQuery) ||
+        producto.numero_documento.toLowerCase().includes(searchQuery) ||
+        producto.marca.toLowerCase().includes(searchQuery)
+      );
+    });
+    setProductosFiltrados(filtered);
+  }, [busqueda, productos]); // Re-run filter when search query or products change
 
   const obtenerRecepciones = async () => {
     try {
@@ -135,6 +150,20 @@ const RecepcionMercancia = () => {
         if (res.data.success) {
           console.log("Nueva recepción creada correctamente.");
           obtenerRecepciones(); // Refrescar la lista
+          setNuevaRecepcion({
+            // Reset form state
+            numero: "",
+            proveedor: "",
+            almacen: "",
+            fechaRecepcion: "",
+            fechaDocumento: "",
+            numDocumento: "",
+            tipoProducto: "",
+            cantidad: "",
+            marca: "",
+            estatus: "",
+            total: "",
+          });
           setMostrarFormulario(false);
         }
       }
@@ -331,12 +360,12 @@ const RecepcionMercancia = () => {
                 </tr>
               </thead>
               <tbody>
-                {productos.length === 0 ? (
+                {productosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan="11">No hay registros disponibles.</td>
                   </tr>
                 ) : (
-                  productos.map((producto) => {
+                  productosFiltrados.map((producto) => {
                     if (!producto.id_recepcion) {
                       console.warn("⚠ Producto sin id_recepcion:", producto); // Warn if id_recepcion is missing
                       return null; // Skip rendering this row

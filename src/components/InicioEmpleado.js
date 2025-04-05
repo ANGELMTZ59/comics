@@ -18,6 +18,11 @@ const InicioEmpleado = ({ setEmpleado }) => {
     const fetchEmpleado = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("❌ No se encontró un token. Redirigiendo al login...");
+          navigate("/login");
+          return;
+        }
 
         const config = {
           headers: {
@@ -41,6 +46,12 @@ const InicioEmpleado = ({ setEmpleado }) => {
         }
       } catch (error) {
         console.error("❌ Error al obtener el empleado:", error);
+        if (error.response && error.response.status === 401) {
+          console.error(
+            "❌ Token inválido o expirado. Redirigiendo al login..."
+          );
+          navigate("/login");
+        }
       }
     };
 
@@ -56,18 +67,6 @@ const InicioEmpleado = ({ setEmpleado }) => {
       } catch (error) {
         console.error("❌ Error al obtener los puestos:", error);
       }
-    };
-
-    const InicioEmpleado = () => {
-      const [localEmpleado, setLocalEmpleado] = useState(null); // AQUÍ sí se puede
-      const [empleadoEditado, setEmpleadoEditado] = useState({
-        nombre: "",
-        email: "",
-        telefono: "",
-        puesto: "",
-      });
-
-      // ... tus funciones fetchEmpleado y demás van aquí ...
     };
 
     fetchEmpleado();

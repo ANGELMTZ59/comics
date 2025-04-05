@@ -1179,6 +1179,336 @@ app.get("/api/roles", (req, res) => {
 });
 
 /* ------------------------------------- */
+/* 🔹 GESTION MOVIMIENTOS               */
+/* ------------------------------------- */
+
+// Ruta para obtener los movimientos
+app.get("/api/movimientos", (req, res) => {
+  const sql = `
+    SELECT 
+      m.id_movimiento,
+      m.tipo_movimiento,
+      p.nombre AS producto, -- Asegúrate de que esta columna exista en la tabla productos
+      m.cantidad,
+      u.nombre AS empleado, -- Asegúrate de que esta columna exista en la tabla usuarios
+      m.fecha_movimiento
+    FROM movimientosinventario m
+    LEFT JOIN productos p ON m.id_producto = p.id_producto
+    LEFT JOIN usuarios u ON m.id_usuario = u.id_usuario
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener movimientos:", err); // Log de error
+      return res.status(500).json({ success: false, error: err });
+    }
+    console.log("📋 Movimientos obtenidos desde la BD:", result); // Log de datos
+    res.json({ success: true, movimientos: result });
+  });
+});
+
+// POST: Crear un nuevo movimiento
+app.post("/api/movimientos", (req, res) => {
+  const {
+    tipo_movimiento,
+    id_producto,
+    cantidad,
+    fecha_movimiento,
+    id_usuario,
+  } = req.body;
+
+  if (!tipo_movimiento || !id_producto || !cantidad || !id_usuario) {
+    console.error("❌ Faltan campos obligatorios en la solicitud:", req.body);
+    return res
+      .status(400)
+      .json({ success: false, message: "Faltan campos obligatorios." });
+  }
+
+  const sqlInsert = `
+    INSERT INTO movimientosinventario 
+    (tipo_movimiento, id_producto, cantidad, fecha_movimiento, id_usuario) 
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  const sqlUpdateStock = `
+    UPDATE productos 
+    SET stock_actual = stock_actual + ? 
+    WHERE id_producto = ?
+  `;
+
+  const sqlCheckStock = `
+    SELECT stock_actual, stock_minimo, nombre 
+    FROM productos 
+    WHERE id_producto = ?
+  `;
+
+  db.query(sqlCheckStock, [id_producto], (errCheck, stockResults) => {
+    if (errCheck) {
+      console.error("❌ Error al verificar stock:", errCheck);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error al verificar stock." });
+    }
+
+    const { stock_actual, stock_minimo, nombre } = stockResults[0];
+    let cantidadImpacto =
+      tipo_movimiento.toLowerCase() === "entrada" ? cantidad : -cantidad;
+
+    // Validar si la salida supera el nivel actual
+    if (
+      tipo_movimiento.toLowerCase() === "salida" &&
+      stock_actual + cantidadImpacto < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede realizar la salida. El nivel actual del producto "${nombre}" es ${stock_actual}.`,
+      });
+    }
+
+    // Insertar movimiento
+    db.query(
+      sqlInsert,
+      [
+        tipo_movimiento,
+        id_producto,
+        cantidad,
+        fecha_movimiento || new Date(),
+        id_usuario,
+      ],
+      (errInsert, result) => {
+        if (errInsert) {
+          console.error("❌ Error al insertar movimiento:", errInsert);
+          return res
+            .status(500)
+            .json({ success: false, message: "Error en la base de datos." });
+        }
+
+        // Actualizar stock_actual
+        db.query(
+          sqlUpdateStock,
+          [cantidadImpacto, id_producto],
+          (errUpdate) => {
+            if (errUpdate) {
+              console.error("❌ Error al actualizar stock:", errUpdate);
+              return res.status(500).json({
+                success: false,
+                message: "Error al actualizar stock.",
+              });
+            }
+
+            // Verificar si el nivel actual llegó a 0 o al nivel mínimo
+            db.query(
+              sqlCheckStock,
+              [id_producto],
+              (errFinalCheck, finalStock) => {
+                if (errFinalCheck) {
+                  console.error(
+                    "❌ Error al verificar stock final:",
+                    errFinalCheck
+                  );
+                  return res.status(500).json({
+                    success: false,
+                    message: "Error al verificar stock final.",
+                  });
+                }
+
+                const { stock_actual: nuevoStock, stock_minimo: nuevoMinimo } =
+                  finalStock[0];
+                if (nuevoStock === 0) {
+                  return res.status(200).json({
+                    success: true,
+                    warning: true,
+                    message: `El producto "${nombre}" se ha agotado. El nivel actual es 0.`,
+                  });
+                } else if (nuevoStock <= nuevoMinimo) {
+                  return res.status(200).json({
+                    success: true,
+                    warning: true,
+                    message: `El producto "${nombre}" ha alcanzado el nivel mínimo (${nuevoMinimo}). El nivel actual es ${nuevoStock}.`,
+                  });
+                }
+
+                res.json({ success: true });
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
+
+// PUT: Editar un movimiento existente
+app.put("/api/movimientos/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    tipo_movimiento,
+    id_producto,
+    cantidad,
+    fecha_movimiento,
+    id_usuario,
+  } = req.body;
+
+  if (!tipo_movimiento || !id_producto || !cantidad || !id_usuario) {
+    console.error("❌ Faltan campos obligatorios en la solicitud:", req.body);
+    return res
+      .status(400)
+      .json({ success: false, message: "Faltan campos obligatorios." });
+  }
+
+  const sqlGetMovimiento = `
+    SELECT * FROM movimientosinventario WHERE id_movimiento = ?
+  `;
+
+  const sqlUpdateMovimiento = `
+    UPDATE movimientosinventario 
+    SET tipo_movimiento = ?, id_producto = ?, cantidad = ?, fecha_movimiento = ?, id_usuario = ? 
+    WHERE id_movimiento = ?
+  `;
+
+  const sqlUpdateStock = `
+    UPDATE productos 
+    SET stock_actual = stock_actual + ? 
+    WHERE id_producto = ?
+  `;
+
+  db.query(sqlGetMovimiento, [id], (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener movimiento:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error al obtener movimiento." });
+    }
+
+    const movimientoAnterior = results[0];
+    const cantidadRevertir =
+      movimientoAnterior.tipo_movimiento.toLowerCase() === "entrada"
+        ? -movimientoAnterior.cantidad
+        : movimientoAnterior.cantidad;
+
+    const cantidadImpacto =
+      tipo_movimiento.toLowerCase() === "entrada" ? cantidad : -cantidad;
+
+    // Revertir impacto del movimiento anterior
+    db.query(
+      sqlUpdateStock,
+      [cantidadRevertir, movimientoAnterior.id_producto],
+      (errRevert) => {
+        if (errRevert) {
+          console.error("❌ Error al revertir stock:", errRevert);
+          return res
+            .status(500)
+            .json({ success: false, message: "Error al revertir stock." });
+        }
+
+        // Actualizar movimiento con los nuevos valores
+        db.query(
+          sqlUpdateMovimiento,
+          [
+            tipo_movimiento,
+            id_producto,
+            cantidad,
+            fecha_movimiento || new Date(),
+            id_usuario,
+            id,
+          ],
+          (errUpdate) => {
+            if (errUpdate) {
+              console.error("❌ Error al actualizar movimiento:", errUpdate);
+              return res.status(500).json({
+                success: false,
+                message: "Error al actualizar movimiento.",
+              });
+            }
+
+            // Aplicar impacto del nuevo movimiento
+            db.query(
+              sqlUpdateStock,
+              [cantidadImpacto, id_producto],
+              (errImpacto) => {
+                if (errImpacto) {
+                  console.error(
+                    "❌ Error al aplicar impacto de stock:",
+                    errImpacto
+                  );
+                  return res.status(500).json({
+                    success: false,
+                    message: "Error al aplicar impacto de stock.",
+                  });
+                }
+
+                res.json({ success: true });
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
+
+// DELETE: Eliminar un movimiento
+app.delete("/api/movimientos/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sqlGetMovimiento = `
+    SELECT * FROM movimientosinventario WHERE id_movimiento = ?
+  `;
+
+  const sqlDeleteMovimiento = `
+    DELETE FROM movimientosinventario WHERE id_movimiento = ?
+  `;
+
+  const sqlUpdateStock = `
+    UPDATE productos 
+    SET stock_actual = stock_actual + ? 
+    WHERE id_producto = ?
+  `;
+
+  db.query(sqlGetMovimiento, [id], (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener movimiento:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error al obtener movimiento." });
+    }
+
+    const movimiento = results[0];
+    const cantidadRevertir =
+      movimiento.tipo_movimiento.toLowerCase() === "entrada"
+        ? -movimiento.cantidad
+        : movimiento.cantidad;
+
+    // Revertir impacto del movimiento
+    db.query(
+      sqlUpdateStock,
+      [cantidadRevertir, movimiento.id_producto],
+      (errRevert) => {
+        if (errRevert) {
+          console.error("❌ Error al revertir stock:", errRevert);
+          return res
+            .status(500)
+            .json({ success: false, message: "Error al revertir stock." });
+        }
+
+        // Eliminar movimiento
+        db.query(sqlDeleteMovimiento, [id], (errDelete) => {
+          if (errDelete) {
+            console.error("❌ Error al eliminar movimiento:", errDelete);
+            return res.status(500).json({
+              success: false,
+              message: "Error al eliminar movimiento.",
+            });
+          }
+
+          res.json({ success: true });
+        });
+      }
+    );
+  });
+});
+
+/* ------------------------------------- */
 /* 🔹 INICIAR SERVIDOR                  */
 /* ------------------------------------- */
 const PORT = 5000;

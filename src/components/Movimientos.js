@@ -1,38 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
+import axios from "axios"; // Asegúrate de importar axios para hacer las peticiones
 import "../styles.css";
+
+const API_URL = "http://localhost:5000/api"; // Cambia esto si es necesario
 
 const Movimientos = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [movimientos, setMovimientos] = useState([
-    {
-      id_movimiento: 1,
-      tipo_movimiento: "Entrada",
-      producto: "Cómic Batman #100",
-      cantidad: 10,
-      empleado: "Juan Pérez",
-      fecha_movimiento: "2025-03-05",
-    },
-    {
-      id_movimiento: 2,
-      tipo_movimiento: "Salida",
-      producto: "Manga One Piece Vol. 50",
-      cantidad: 5,
-      empleado: "María López",
-      fecha_movimiento: "2025-03-04",
-    },
-  ]);
-
+  const [movimientos, setMovimientos] = useState([]);
   const [movimientoForm, setMovimientoForm] = useState({
     tipo_movimiento: "Entrada",
     producto: "",
     cantidad: "",
     empleado: "",
   });
+  const [loading, setLoading] = useState(true); // Indicador de carga
+  const [error, setError] = useState(null); // Estado para errores
+  const [productos, setProductos] = useState([]); // Lista de productos
+  const [usuarios, setUsuarios] = useState([]); // Lista de usuarios
+
+  useEffect(() => {
+    const fetchMovimientos = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/movimientos`);
+        console.log("Movimientos obtenidos:", res.data.movimientos); // Log para verificar datos
+        if (res.data.success) {
+          setMovimientos(res.data.movimientos);
+        } else {
+          setError("Error al cargar los movimientos.");
+        }
+      } catch (err) {
+        console.error("Error al obtener los movimientos:", err);
+        setError("No se pudo conectar con el servidor.");
+      } finally {
+        setLoading(false); // Finaliza la carga
+      }
+    };
+
+    fetchMovimientos();
+  }, []);
+
+  useEffect(() => {
+    // Fetch productos
+    const fetchProductos = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/productos`);
+        setProductos(res.data.productos);
+      } catch (err) {
+        console.error("Error al obtener productos:", err);
+      }
+    };
+
+    // Fetch usuarios
+    const fetchUsuarios = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/usuarios`);
+        setUsuarios(res.data.usuarios);
+      } catch (err) {
+        console.error("Error al obtener usuarios:", err);
+      }
+    };
+
+    fetchProductos();
+    fetchUsuarios();
+  }, []);
 
   const abrirModal = (movimiento = null) => {
     if (movimiento) {
@@ -55,7 +89,7 @@ const Movimientos = () => {
     setEditando(false);
   };
 
-  const guardarMovimiento = () => {
+  const guardarMovimiento = async () => {
     if (
       !movimientoForm.producto ||
       !movimientoForm.cantidad ||
@@ -65,41 +99,76 @@ const Movimientos = () => {
       return;
     }
 
-    if (editando) {
-      setMovimientos(
-        movimientos.map((m) =>
-          m.id_movimiento === movimientoForm.id_movimiento ? movimientoForm : m
-        )
-      );
-    } else {
-      setMovimientos([
-        ...movimientos,
-        {
-          ...movimientoForm,
-          id_movimiento: movimientos.length + 1,
-          fecha_movimiento: new Date().toISOString().split("T")[0],
-        },
-      ]);
+    try {
+      const formatDate = (date) => {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const hours = String(d.getHours()).padStart(2, "0");
+        const minutes = String(d.getMinutes()).padStart(2, "0");
+        const seconds = String(d.getSeconds()).padStart(2, "0");
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      };
+
+      const payload = {
+        tipo_movimiento: movimientoForm.tipo_movimiento,
+        id_producto: movimientoForm.producto,
+        cantidad: movimientoForm.cantidad,
+        fecha_movimiento: formatDate(new Date()),
+        id_usuario: movimientoForm.empleado,
+      };
+
+      const res = editando
+        ? await axios.put(
+            `${API_URL}/movimientos/${movimientoForm.id_movimiento}`,
+            payload
+          )
+        : await axios.post(`${API_URL}/movimientos`, payload);
+
+      if (res.data.success) {
+        alert("Movimiento guardado correctamente.");
+      }
+
+      // Refrescar lista de movimientos
+      const movimientosRes = await axios.get(`${API_URL}/movimientos`);
+      setMovimientos(movimientosRes.data.movimientos);
+    } catch (error) {
+      console.error("Error al guardar el movimiento", error);
+      alert("Ocurrió un error al guardar el movimiento.");
     }
+
     cerrarModal();
   };
 
-  const eliminarMovimiento = (id_movimiento) => {
+  const eliminarMovimiento = async (id_movimiento) => {
     if (window.confirm("¿Seguro que deseas eliminar este movimiento?")) {
-      setMovimientos(
-        movimientos.filter((m) => m.id_movimiento !== id_movimiento)
-      );
+      try {
+        await axios.delete(`${API_URL}/movimientos/${id_movimiento}`);
+        const res = await axios.get(`${API_URL}/movimientos`);
+        setMovimientos(res.data.movimientos);
+      } catch (error) {
+        console.error("Error al eliminar el movimiento", error);
+      }
     }
   };
 
-  const movimientosFiltrados = movimientos.filter((m) =>
-    m.producto.toLowerCase().includes(searchTerm.toLowerCase())
+  const movimientosFiltrados = movimientos.filter(
+    (m) =>
+      m.producto && m.producto.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return <div className="loading">Cargando movimientos...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
 
   return (
     <div className="movimientos-page">
       <Sidebar /> {/* ✅ Sidebar importado */}
-
       <div className="contenedor-movimientos">
         {/* 📌 Encabezado */}
         <div className="header-container">
@@ -136,16 +205,22 @@ const Movimientos = () => {
             <tbody>
               {movimientosFiltrados.map((mov) => (
                 <tr key={mov.id_movimiento}>
-                  <td>{mov.tipo_movimiento}</td>
-                  <td>{mov.producto}</td>
-                  <td>{mov.cantidad}</td>
-                  <td>{mov.empleado}</td>
-                  <td>{mov.fecha_movimiento}</td>
+                  <td>{mov.tipo_movimiento || "N/A"}</td>
+                  <td>{mov.producto || "N/A"}</td>
+                  <td>{mov.cantidad || "N/A"}</td>
+                  <td>{mov.empleado || "N/A"}</td>
+                  <td>{mov.fecha_movimiento || "N/A"}</td>
                   <td className="acciones">
-                    <button className="btn-editar" onClick={() => abrirModal(mov)}>
+                    <button
+                      className="btn-editar"
+                      onClick={() => abrirModal(mov)}
+                    >
                       <FaEdit />
                     </button>
-                    <button className="btn-eliminar" onClick={() => eliminarMovimiento(mov.id_movimiento)}>
+                    <button
+                      className="btn-eliminar"
+                      onClick={() => eliminarMovimiento(mov.id_movimiento)}
+                    >
                       <FaTrash />
                     </button>
                   </td>
@@ -164,36 +239,63 @@ const Movimientos = () => {
               <select
                 value={movimientoForm.tipo_movimiento}
                 onChange={(e) =>
-                  setMovimientoForm({ ...movimientoForm, tipo_movimiento: e.target.value })
+                  setMovimientoForm({
+                    ...movimientoForm,
+                    tipo_movimiento: e.target.value,
+                  })
                 }
               >
                 <option value="Entrada">Entrada</option>
                 <option value="Salida">Salida</option>
               </select>
               <label>Producto:</label>
-              <input
-                type="text"
+              <select
                 value={movimientoForm.producto}
                 onChange={(e) =>
-                  setMovimientoForm({ ...movimientoForm, producto: e.target.value })
+                  setMovimientoForm({
+                    ...movimientoForm,
+                    producto: e.target.value,
+                  })
                 }
-              />
+              >
+                <option value="">Selecciona un producto</option>
+                {productos.map((producto) => (
+                  <option
+                    key={producto.id_producto}
+                    value={producto.id_producto}
+                  >
+                    {producto.nombre}
+                  </option>
+                ))}
+              </select>
               <label>Cantidad:</label>
               <input
                 type="number"
                 value={movimientoForm.cantidad}
                 onChange={(e) =>
-                  setMovimientoForm({ ...movimientoForm, cantidad: e.target.value })
+                  setMovimientoForm({
+                    ...movimientoForm,
+                    cantidad: e.target.value,
+                  })
                 }
               />
               <label>Empleado:</label>
-              <input
-                type="text"
+              <select
                 value={movimientoForm.empleado}
                 onChange={(e) =>
-                  setMovimientoForm({ ...movimientoForm, empleado: e.target.value })
+                  setMovimientoForm({
+                    ...movimientoForm,
+                    empleado: e.target.value,
+                  })
                 }
-              />
+              >
+                <option value="">Selecciona un empleado</option>
+                {usuarios.map((usuario) => (
+                  <option key={usuario.id_usuario} value={usuario.id_usuario}>
+                    {usuario.nombre}
+                  </option>
+                ))}
+              </select>
               <button className="btn-guardar" onClick={guardarMovimiento}>
                 Guardar
               </button>
