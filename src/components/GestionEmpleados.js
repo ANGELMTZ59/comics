@@ -108,12 +108,12 @@ const GestionEmpleados = ({ empleado }) => {
     setMenuUsuarioVisible(!menuUsuarioVisible);
   };
 
+  // Botón de activación/desactivación
   const toggleActivo = async (id, actual) => {
     try {
-      await axios.put(`${API_URL}/usuarios/${id}`, {
-        activo: actual === "si" ? "no" : "si",
-      });
-      obtenerEmpleados();
+      const nuevoEstado = actual === "si" ? "no" : "si"; // Cambiar estado de 'si' a 'no' o viceversa
+      await axios.put(`${API_URL}/usuarios/${id}`, { activo: nuevoEstado }); // Actualizar estado en la BD
+      obtenerEmpleados(); // Refrescar la lista de empleados
     } catch (error) {
       console.error("❌ Error al cambiar estado:", error);
     }

@@ -4,7 +4,7 @@
     flex-direction: column;
     padding: 20px;
     max-width: 1200px;
-    margin-right: 400px;
+    margin-right: 20px;
 }
 
 /* 📌 Encabezado */
@@ -53,36 +53,31 @@
     width: 100%;
 }
 
-.tabla-ordenes {
-    width: 90%;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-    padding: 15px;
-    overflow-x: auto;
-}
-
 /* 📌 Estilo de la tabla */
 .tabla-ordenes {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
     font-size: 14px;
+    overflow-x: auto;
 }
 
-/* 📌 Ajuste de las celdas */
 .tabla-ordenes th, .tabla-ordenes td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
 }
 
-/* 📌 Encabezado de la tabla */
 .tabla-ordenes th {
     background-color: #2c3e50;
     color: white;
     font-weight: bold;
-    font-size: 15px;
 }
+
+.tabla-container {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 
 /* 📌 Botones de acciones */
 .acciones {

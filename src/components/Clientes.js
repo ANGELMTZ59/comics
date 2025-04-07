@@ -55,6 +55,16 @@ const Clientes = () => {
     fetchClientes(); // ✅ Aquí llamamos a la función
   }, []); // ✅ El arreglo vacío indica que solo se ejecuta una vez al montar
 
+  // Add a refresh function to reload the client list
+  const refreshClientes = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/clientes");
+      setClientes(response.data);
+    } catch (error) {
+      console.error("❌ Error al refrescar clientes:", error);
+    }
+  };
+
   const abrirModalAgregar = () => {
     setEditingClient(null);
     setClienteForm({
@@ -138,8 +148,8 @@ const Clientes = () => {
         const response = await axios.post(`${API_URL}/clientes`, clienteForm);
 
         if (response.data.success && response.data.cliente) {
-          setClientes([...clientes, response.data.cliente]);
           alert("✅ Cliente agregado correctamente");
+          refreshClientes(); // Refresh the client list
         } else {
           alert("❌ Error al agregar el cliente");
         }

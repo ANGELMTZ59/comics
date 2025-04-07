@@ -5,12 +5,15 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+// ✅ Cargar variables de entorno desde un archivo .env
+require("dotenv").config();
+
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ Clave para JWT (se recomienda usar un archivo .env)
-const SECRET_KEY = "tu_secreto";
+// ✅ Clave para JWT (usar variable de entorno o un valor predeterminado)
+const SECRET_KEY = process.env.JWT_SECRET || "tu_secreto"; // Asegúrate de que JWT_SECRET esté definido en el archivo .env
 
 // 📌 Configurar conexión a MySQL
 const db = mysql.createConnection({
@@ -34,8 +37,9 @@ db.connect((err) => {
 
 app.get("/api/empleado", (req, res) => {
   const token = req.headers.authorization;
-  if (!token)
+  if (!token) {
     return res.status(401).json({ success: false, message: "No autorizado" });
+  }
 
   let decoded;
   try {
@@ -44,7 +48,7 @@ app.get("/api/empleado", (req, res) => {
     return res.status(401).json({ success: false, message: "Token inválido" });
   }
 
-  const id_usuario = decoded.id;
+  const id_usuario = decoded.id_usuario; // Asegúrate de que el token contiene `id_usuario`
 
   const sql = `
     SELECT u.id_usuario, u.email, u.id_rol, u.nombre AS nombre_usuario, 
@@ -56,15 +60,18 @@ app.get("/api/empleado", (req, res) => {
   `;
 
   db.query(sql, [id_usuario], (err, result) => {
-    if (err)
+    if (err) {
+      console.error("❌ Error al consultar el empleado:", err);
       return res
         .status(500)
-        .json({ success: false, message: "Error en la BD" });
+        .json({ success: false, message: "Error en la base de datos" });
+    }
 
-    if (result.length === 0)
+    if (result.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "Empleado no encontrado" });
+    }
 
     res.json({ success: true, empleado: result[0] });
   });
@@ -87,37 +94,51 @@ app.get("/api/puestos", (req, res) => {
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
+  // Validar que los campos requeridos estén presentes
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email y contraseña son requeridos." });
+  }
+
   const sql = `
-    SELECT u.id_usuario, u.email, u.contraseña AS password, u.telefono, u.nombre, u.id_rol, u.activo, r.nombre_rol
-    FROM usuarios u
-    JOIN roles r ON u.id_rol = r.id_rol
-    WHERE u.email = ?
+    SELECT id_usuario, nombre, email, contraseña, activo, id_rol
+    FROM usuarios
+    WHERE email = ?
   `;
 
   db.query(sql, [email], async (err, results) => {
-    if (err)
+    if (err) {
+      console.error("❌ Error al consultar el usuario:", err);
       return res
         .status(500)
-        .json({ success: false, message: "Error en la BD" });
-    if (results.length === 0)
+        .json({ success: false, message: "Error en el servidor" });
+    }
+
+    if (results.length === 0) {
       return res
-        .status(401)
+        .status(404)
         .json({ success: false, message: "Usuario no encontrado" });
+    }
 
     const usuario = results[0];
-    const validPassword = await bcrypt.compare(password, usuario.password);
-    if (!validPassword)
+
+    if (usuario.activo === "no") {
+      return res.status(403).json({
+        success: false,
+        message: "Usuario desactivado. No puede iniciar sesión.",
+      });
+    }
+
+    const match = await bcrypt.compare(password, usuario.contraseña);
+    if (!match) {
       return res
-        .status(401)
+        .status(400)
         .json({ success: false, message: "Contraseña incorrecta" });
+    }
 
     const token = jwt.sign(
-      {
-        id: usuario.id_usuario,
-        email: usuario.email,
-        nombre: usuario.nombre,
-        id_rol: usuario.id_rol, // ✅ Este es el que necesitas
-      },
+      { id_usuario: usuario.id_usuario, id_rol: usuario.id_rol },
       SECRET_KEY,
       { expiresIn: "1h" }
     );
@@ -129,13 +150,57 @@ app.post("/api/login", (req, res) => {
         id_usuario: usuario.id_usuario,
         nombre: usuario.nombre,
         email: usuario.email,
-        telefono: usuario.telefono,
         id_rol: usuario.id_rol,
-        activo: usuario.activo,
-        fecha_contratacion: usuario.fecha_contratacion,
-        rol: usuario.nombre_rol,
       },
     });
+  });
+});
+
+app.post("/api/login/empleado", (req, res) => {
+  const { email, password } = req.body;
+
+  const sql = `
+    SELECT id_usuario, nombre, email, contraseña, activo, id_rol
+    FROM usuarios
+    WHERE email = ? AND id_rol = 2 -- Asegúrate de que el rol 2 sea para empleados
+  `;
+
+  db.query(sql, [email], async (err, results) => {
+    if (err) {
+      console.error("❌ Error al consultar el usuario:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error en el servidor" });
+    }
+
+    if (results.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado" });
+    }
+
+    const usuario = results[0];
+
+    if (usuario.activo === "no") {
+      return res.status(403).json({
+        success: false,
+        message: "Usuario desactivado. No puede iniciar sesión.",
+      });
+    }
+
+    const match = await bcrypt.compare(password, usuario.contraseña);
+    if (!match) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Contraseña incorrecta" });
+    }
+
+    const token = jwt.sign(
+      { id_usuario: usuario.id_usuario, id_rol: usuario.id_rol },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    res.json({ success: true, token, usuario });
   });
 });
 
@@ -172,6 +237,62 @@ app.put("/api/empleado/:id_usuario", (req, res) => {
       });
     }
   );
+});
+
+// ✅ Inicio de sesión para clientes
+app.post("/api/client-login", (req, res) => {
+  const { email, password } = req.body;
+
+  // Validar que los campos requeridos estén presentes
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email y contraseña son requeridos." });
+  }
+
+  const sql = `
+    SELECT id_cliente, nombre, email, contraseña
+    FROM clientes
+    WHERE email = ?
+  `;
+
+  db.query(sql, [email], async (err, results) => {
+    if (err) {
+      console.error("❌ Error al consultar el cliente:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error en el servidor" });
+    }
+
+    if (results.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cliente no encontrado" });
+    }
+
+    const cliente = results[0];
+
+    const match = await bcrypt.compare(password, cliente.contraseña);
+    if (!match) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Contraseña incorrecta" });
+    }
+
+    const token = jwt.sign({ id_cliente: cliente.id_cliente }, SECRET_KEY, {
+      expiresIn: "1h",
+    });
+
+    res.json({
+      success: true,
+      token,
+      usuario: {
+        id_cliente: cliente.id_cliente,
+        nombre: cliente.nombre,
+        email: cliente.email,
+      },
+    });
+  });
 });
 
 /* ------------------------------------- */
@@ -254,51 +375,73 @@ app.delete("/api/clientes/:id", (req, res) => {
 });
 
 // ✅ Crear un nuevo cliente
-app.post("/api/clientes", (req, res) => {
+app.post("/api/clientes", async (req, res) => {
   const {
     nombre,
     email,
+    contraseña, // Use 'contraseña' to match the database column name
     telefono,
     direccion,
     nivel_membresia,
     frecuencia_compra,
   } = req.body;
-  if (!nombre || !email || !telefono || !direccion)
+
+  // Validate required fields
+  if (!nombre || !email || !contraseña) {
     return res
       .status(400)
       .json({ success: false, message: "Faltan datos obligatorios" });
+  }
 
-  const sql = `INSERT INTO clientes (nombre, email, telefono, direccion, nivel_membresia, frecuencia_compra, fecha_registro)
-               VALUES (?, ?, ?, ?, ?, ?, NOW())`;
+  try {
+    // Hash the password before storing it
+    const hashedPassword = await bcrypt.hash(contraseña, 10);
 
-  db.query(
-    sql,
-    [nombre, email, telefono, direccion, nivel_membresia, frecuencia_compra],
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ success: false, message: "Error en la BD" });
+    const sql = `INSERT INTO clientes (nombre, email, contraseña, telefono, direccion, nivel_membresia, frecuencia_compra, fecha_registro)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
 
-      const id = result.insertId;
-      const sqlGet = "SELECT * FROM clientes WHERE id_cliente = ?";
-
-      db.query(sqlGet, [id], (err2, clienteResult) => {
-        if (err2) {
-          return res.status(500).json({
-            success: false,
-            message: "Error al obtener cliente insertado",
-          });
+    db.query(
+      sql,
+      [
+        nombre,
+        email,
+        hashedPassword,
+        telefono,
+        direccion,
+        nivel_membresia,
+        frecuencia_compra,
+      ],
+      (err, result) => {
+        if (err) {
+          console.error("❌ Error al insertar cliente:", err);
+          return res
+            .status(500)
+            .json({ success: false, message: "Error en la base de datos" });
         }
 
-        res.json({
-          success: true,
-          message: "Cliente agregado correctamente",
-          cliente: clienteResult[0],
+        const id = result.insertId;
+        const sqlGet = "SELECT * FROM clientes WHERE id_cliente = ?";
+
+        db.query(sqlGet, [id], (err2, clienteResult) => {
+          if (err2) {
+            return res.status(500).json({
+              success: false,
+              message: "Error al obtener cliente insertado",
+            });
+          }
+
+          res.json({
+            success: true,
+            message: "Cliente agregado correctamente",
+            cliente: clienteResult[0],
+          });
         });
-      });
-    }
-  );
+      }
+    );
+  } catch (error) {
+    console.error("❌ Error al procesar la contraseña:", error);
+    res.status(500).json({ success: false, message: "Error en el servidor" });
+  }
 });
 
 /* ------------------------------------- */
@@ -779,12 +922,10 @@ app.post("/api/recepciones", (req, res) => {
   db.query(sql, (err, results) => {
     if (err) {
       console.error("❌ Error al obtener último número de documento:", err);
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Error al obtener último número de documento.",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener último número de documento.",
+      });
     }
 
     let nuevoNumeroDocumento = "0001"; // Valor por defecto si no hay datos
@@ -880,6 +1021,66 @@ app.delete("/api/productos/:id", (req, res) => {
   });
 });
 
+// POST: Restock a product
+app.post("/api/productos/:id/restock", (req, res) => {
+  const { id } = req.params;
+  const { cantidad, id_usuario } = req.body;
+
+  if (!cantidad || !id_usuario) {
+    return res.status(400).json({
+      success: false,
+      message: "Cantidad e ID de usuario son obligatorios.",
+    });
+  }
+
+  const sqlUpdateStock = `
+    UPDATE productos 
+    SET stock_actual = stock_actual + ? 
+    WHERE id_producto = ?
+  `;
+
+  const sqlCheckStock = `
+    SELECT stock_actual, stock_minimo, nombre 
+    FROM productos 
+    WHERE id_producto = ?
+  `;
+
+  db.query(sqlUpdateStock, [cantidad, id], (errUpdate) => {
+    if (errUpdate) {
+      console.error("❌ Error al actualizar stock:", errUpdate);
+      return res.status(500).json({
+        success: false,
+        message: "Error al actualizar stock.",
+      });
+    }
+
+    // Verificar el nuevo nivel de stock
+    db.query(sqlCheckStock, [id], (errCheck, stockResults) => {
+      if (errCheck) {
+        console.error("❌ Error al verificar stock:", errCheck);
+        return res.status(500).json({
+          success: false,
+          message: "Error al verificar stock.",
+        });
+      }
+
+      const { stock_actual, stock_minimo, nombre } = stockResults[0];
+      if (stock_actual > stock_minimo) {
+        return res.json({
+          success: true,
+          message: `El producto "${nombre}" ha sido reabastecido. Nivel actual: ${stock_actual}.`,
+        });
+      } else {
+        return res.json({
+          success: true,
+          warning: true,
+          message: `El producto "${nombre}" sigue por debajo del nivel mínimo (${stock_minimo}). Nivel actual: ${stock_actual}.`,
+        });
+      }
+    });
+  });
+});
+
 /* ------------------------------------- */
 /* 🔹 GESTION PROVEEDORES                */
 /* ------------------------------------- */
@@ -897,6 +1098,73 @@ app.get("/api/proveedores", (req, res) => {
   });
 });
 
+// 📦 Crear un nuevo proveedor
+// En el endpoint de agregar proveedor
+app.post("/api/proveedores", (req, res) => {
+  const { nombre, email, telefono, direccion, fecha_ultimo_abastecimiento } =
+    req.body;
+
+  const sql = `
+    INSERT INTO proveedores (nombre, email, telefono, direccion, fecha_ultimo_abastecimiento)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  const valores = [
+    nombre,
+    email,
+    telefono,
+    direccion,
+    fecha_ultimo_abastecimiento || null, // Si no se proporciona fecha, se enviará null
+  ];
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error("❌ Error al insertar proveedor:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
+  });
+});
+
+// 📦 Editar un proveedor
+app.put("/api/proveedores/:id", (req, res) => {
+  const { id } = req.params;
+  const { nombre, email, telefono, direccion } = req.body;
+
+  if (!nombre || !email || !telefono || !direccion) {
+    return res.status(400).json({
+      success: false,
+      message: "Todos los campos son obligatorios.",
+    });
+  }
+
+  const sql = `
+    UPDATE proveedores
+    SET nombre = ?, email = ?, telefono = ?, direccion = ?
+    WHERE id_proveedor = ?
+  `;
+  db.query(sql, [nombre, email, telefono, direccion, id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al actualizar proveedor:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
+  });
+});
+
+// 📦 Eliminar un proveedor
+app.delete("/api/proveedores/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM proveedores WHERE id_proveedor = ?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar proveedor:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
+  });
+});
+
 /* ------------------------------------- */
 /* 🔹 GESTION ORDENES DE COMPRA          */
 /* ------------------------------------- */
@@ -909,7 +1177,7 @@ app.get("/api/ordenesproveedor", (req, res) => {
       pr.nombre AS proveedor,
       o.cantidad,
       o.estado,
-      o.fecha_entrega_real
+      o.fecha_orden
     FROM ordenesproveedores o
     JOIN productos p ON o.id_producto = p.id_producto
     JOIN proveedores pr ON o.id_proveedor = pr.id_proveedor
@@ -918,10 +1186,108 @@ app.get("/api/ordenesproveedor", (req, res) => {
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error al obtener órdenes:", err);
-      return res.status(500).json({ success: false });
+      console.error("❌ Error al obtener órdenes:", err); // Aquí es donde deberías revisar qué está fallando
+      return res.status(500).json({ success: false, error: err });
     }
+    console.log("Órdenes obtenidas:", results); // Verifica que los resultados sean correctos
     res.json({ success: true, ordenes: results });
+  });
+});
+
+app.post("/api/ordenesproveedor", (req, res) => {
+  const {
+    id_producto,
+    cantidad,
+    id_proveedor,
+    fecha_orden, // La fecha que recibes del frontend
+    estado,
+  } = req.body;
+
+  // Asegúrate de que la fecha esté correctamente formateada
+  const fechaOrden = fecha_orden ? new Date(fecha_orden) : new Date(); // Si no envías la fecha, usa la fecha actual
+
+  // Verifica que las fechas sean correctas
+  if (isNaN(fechaOrden)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Fecha de orden no válida" });
+  }
+
+  const fechaOrdenISO = fechaOrden.toISOString().slice(0, 19).replace("T", " "); // Formato adecuado para SQL
+
+  const sql = `INSERT INTO ordenesproveedores (id_producto, cantidad, id_proveedor, fecha_orden, estado) VALUES (?, ?, ?, ?, ?)`;
+
+  try {
+    db.query(
+      sql,
+      [id_producto, cantidad, id_proveedor, fechaOrdenISO, estado],
+      (err, result) => {
+        if (err) {
+          console.error("❌ Error al insertar la orden", err); // Asegúrate de ver el error aquí
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        res.json({ success: true, id: result.insertId });
+      }
+    );
+  } catch (error) {
+    console.error("Error en el servidor:", error);
+    res.status(500).json({ success: false, message: "Error en el servidor" });
+  }
+});
+
+app.get("/api/ordenesproveedor/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `SELECT * FROM ordenesproveedores WHERE id_orden = ?`;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: err });
+    }
+    if (result.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Orden no encontrada" });
+    }
+    res.json({ success: true, orden: result[0] });
+  });
+});
+
+app.put("/api/ordenesproveedor/:id", (req, res) => {
+  // Maneja la lógica para actualizar una orden
+  const { id } = req.params; // Extrae el ID de la orden desde la URL
+  const { id_producto, cantidad, id_proveedor, estado } = req.body;
+
+  const sql = `
+    UPDATE ordenesproveedores
+    SET id_producto = ?, cantidad = ?, id_proveedor = ?, estado = ?
+    WHERE id_orden = ?
+  `;
+
+  db.query(
+    sql,
+    [id_producto, cantidad, id_proveedor, estado, id],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al actualizar la orden:", err);
+        return res.status(500).json({ success: false, error: err });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete("/api/ordenesproveedor/:id_orden", (req, res) => {
+  const { id_orden } = req.params;
+
+  const sql = `DELETE FROM ordenesproveedores WHERE id_orden = ?`;
+
+  db.query(sql, [id_orden], (err, result) => {
+    if (err) {
+      console.error("❌ Error al eliminar orden:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
+    res.json({ success: true });
   });
 });
 
@@ -1168,6 +1534,7 @@ app.get("/api/usuarios", (req, res) => {
 });
 
 // Agregar un nuevo empleado
+// Agregar un nuevo empleado
 app.post("/api/usuarios", async (req, res) => {
   console.log("📥 Datos recibidos para crear usuario:", req.body); // 🧪 DEBUG
   const { nombre, email, password, telefono, id_rol, activo } = req.body;
@@ -1192,8 +1559,10 @@ app.post("/api/usuarios", async (req, res) => {
 // Actualizar empleado
 app.put("/api/usuarios/:id", async (req, res) => {
   const { nombre, email, password, telefono, id_rol, activo } = req.body;
+  const { id } = req.params; // El ID del usuario a actualizar
 
-  let sql, valores;
+  let sql;
+  let valores;
 
   // Si se incluye la contraseña, la actualiza
   if (password) {
@@ -1209,8 +1578,8 @@ app.put("/api/usuarios/:id", async (req, res) => {
       hashedPassword,
       telefono,
       id_rol,
-      activo,
-      req.params.id,
+      activo, // Actualizamos el estado 'activo' también
+      id,
     ];
   } else {
     sql = `
@@ -1218,11 +1587,15 @@ app.put("/api/usuarios/:id", async (req, res) => {
       SET nombre = ?, email = ?, telefono = ?, id_rol = ?, activo = ?
       WHERE id_usuario = ?
     `;
-    valores = [nombre, email, telefono, id_rol, activo, req.params.id];
+    valores = [nombre, email, telefono, id_rol, activo, id];
   }
 
+  // Ejecutar la actualización en la base de datos
   db.query(sql, valores, (err) => {
-    if (err) return res.status(500).json({ success: false, error: err });
+    if (err) {
+      console.error("❌ Error al actualizar usuario:", err);
+      return res.status(500).json({ success: false, error: err });
+    }
     res.json({ success: true });
   });
 });
@@ -1575,6 +1948,12 @@ app.delete("/api/movimientos/:id", (req, res) => {
       }
     );
   });
+});
+
+// Example: Ensure all error responses are JSON
+app.use((err, req, res, next) => {
+  console.error("❌ Error en el servidor:", err);
+  res.status(500).json({ success: false, message: "Error en el servidor" });
 });
 
 /* ------------------------------------- */

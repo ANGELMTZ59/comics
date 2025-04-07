@@ -81,13 +81,32 @@ const RecepcionMercancia = () => {
       });
 
       const payload = {
-        // tus datos para crear la recepción
+        ...nuevaRecepcion,
       };
 
       const res = await axios.post(`${API_URL}/recepciones`, payload);
       if (res.data.success) {
         console.log("Nueva recepción creada correctamente.");
         obtenerRecepciones(); // Refrescar la lista
+
+        // Check stock levels
+        const productoRes = await axios.get(
+          `${API_URL}/productos/${nuevaRecepcion.id_producto}`
+        );
+        const producto = productoRes.data;
+
+        if (producto.stock_actual <= producto.stock_minimo) {
+          alert(
+            `⚠️ El producto "${producto.nombre}" sigue con stock bajo.\nStock actual: ${producto.stock_actual}, Stock mínimo: ${producto.stock_minimo}`
+          );
+        }
+
+        if (producto.stock_actual > 300) {
+          alert(
+            `⚠️ El producto "${producto.nombre}" tiene exceso de stock (más de 300 unidades).\nStock actual: ${producto.stock_actual}.\nPor favor, considera estabilizar el inventario.`
+          );
+        }
+
         setMostrarFormulario(false); // Cerrar el formulario
       }
     } catch (error) {

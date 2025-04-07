@@ -209,7 +209,7 @@ const Movimientos = () => {
                   <td>{mov.producto || "N/A"}</td>
                   <td>{mov.cantidad || "N/A"}</td>
                   <td>{mov.empleado || "N/A"}</td>
-                  <td>{mov.fecha_movimiento || "N/A"}</td>
+                  <td>{mov.fecha_movimiento?.substring(0, 10) || "N/A"}</td>
                   <td className="acciones">
                     <button
                       className="btn-editar"

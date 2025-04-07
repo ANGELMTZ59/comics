@@ -17,21 +17,48 @@ import Membresias from "./components/Membresias";
 import Notificaciones from "./components/Notificaciones";
 import Promociones from "./components/Promociones";
 import Login from "./components/Login";
+import ClientesProductos from "./components/ClientesProductos";
+import CrearUsuario from "./components/CrearUsuario";
+import IniciarSesion from "./components/IniciarSesion";
+import Carrito from "./components/Carrito";
 
 function App() {
   const [empleado, setEmpleado] = useState(() => {
     const stored = localStorage.getItem("empleado");
-    return stored ? JSON.parse(stored) : null;
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        console.error("❌ Error al analizar los datos de 'empleado':", error);
+        localStorage.removeItem("empleado"); // Limpiar datos inválidos
+      }
+    }
+    return null; // Valor predeterminado si no hay datos válidos
+  });
+
+  const [cliente, setCliente] = useState(() => {
+    const stored = localStorage.getItem("cliente");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        console.error("❌ Error al analizar los datos de 'cliente':", error);
+        localStorage.removeItem("cliente"); // Limpiar datos inválidos
+      }
+    }
+    return null; // Valor predeterminado si no hay datos válidos
   });
 
   console.log("🧑 Empleado cargado:", empleado);
+  console.log("👤 Cliente cargado:", cliente);
 
   return (
     <Router>
       <Routes>
-        {/* Redirección automática de "/" a "/inicioempleado" */}
-        <Route path="/" element={<Navigate to="/Login" />} />
+        {/* Redirección automática de "/" */}
+        <Route path="/" element={<Navigate to="/login" />} />
 
+        {/* Rutas para empleados */}
         <Route path="/register-employee" element={<RegisterEmployee />} />
         <Route path="/login" element={<Login />} />
         <Route
@@ -62,6 +89,12 @@ function App() {
             )
           }
         />
+
+        {/* Rutas para clientes */}
+        <Route path="/iniciar-sesion" element={<IniciarSesion />} />
+        <Route path="/productos" element={<ClientesProductos />} />
+        <Route path="/crear-usuario" element={<CrearUsuario />} />
+        <Route path="/carrito" element={<Carrito />} />
       </Routes>
     </Router>
   );

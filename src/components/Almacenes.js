@@ -57,6 +57,30 @@ const Almacenes = () => {
       const res = await axios.get(`${API_URL}/productos`);
       if (res.data.success) {
         setProductos(res.data.productos);
+
+        // Alert for low stock
+        const lowStockProducts = res.data.productos.filter(
+          (p) => p.stock_actual <= p.stock_minimo
+        );
+        if (lowStockProducts.length > 0) {
+          alert(
+            `⚠️ Los siguientes productos tienen stock bajo:\n${lowStockProducts
+              .map((p) => `${p.nombre} (Stock actual: ${p.stock_actual})`)
+              .join("\n")}`
+          );
+        }
+
+        // Alert for excess stock
+        const excessStockProducts = res.data.productos.filter(
+          (p) => p.stock_actual > 300
+        );
+        if (excessStockProducts.length > 0) {
+          alert(
+            `⚠️ Los siguientes productos tienen exceso de stock (más de 300 unidades):\n${excessStockProducts
+              .map((p) => `${p.nombre} (Stock actual: ${p.stock_actual})`)
+              .join("\n")}\nPor favor, considera estabilizar el inventario.`
+          );
+        }
       }
     } catch (error) {
       console.error("❌ Error al obtener productos:", error);
@@ -80,6 +104,8 @@ const Almacenes = () => {
     }
 
     try {
+      console.log("📤 Enviando datos del producto:", productoForm); // Debugging log
+
       if (isEditing) {
         // Actualizar producto
         await axios.put(
@@ -95,7 +121,13 @@ const Almacenes = () => {
       setIsEditing(false); // Resetear el estado
     } catch (err) {
       console.error("❌ Error al guardar producto:", err);
-      alert("Error al guardar el producto.");
+
+      // Mostrar mensaje de error más detallado
+      alert(
+        `Error al guardar el producto: ${
+          err.response?.data?.message || "Error desconocido."
+        }`
+      );
     }
   };
 
