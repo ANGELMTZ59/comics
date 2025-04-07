@@ -301,12 +301,15 @@ app.post("/api/client-login", (req, res) => {
 
 // ✅ Obtener todos los clientes
 app.get("/api/clientes", (req, res) => {
-  db.query("SELECT * FROM clientes", (err, result) => {
-    if (err)
+  const sql = "SELECT id_cliente, nombre FROM clientes";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener clientes:", err);
       return res
         .status(500)
-        .json({ success: false, message: "Error en la BD" });
-    res.json({ success: true, clientes: result });
+        .json({ success: false, message: "Error en la base de datos" });
+    }
+    res.json({ success: true, clientes: results });
   });
 });
 
@@ -641,21 +644,27 @@ app.get("/api/notificaciones", (req, res) => {
       n.id_notificacion,
       n.id_cliente,
       c.nombre AS nombre_cliente,
+      n.id_promocion,
+      p.descripcion AS promocion,
       n.titulo,
       n.mensaje,
       n.fecha_envio,
       n.leida
     FROM notificacionesclientes n
     LEFT JOIN clientes c ON n.id_cliente = c.id_cliente
+    LEFT JOIN promociones p ON n.id_promocion = p.id_promocion
     ORDER BY n.fecha_envio DESC
   `;
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error al obtener notificaciones:", err);
-      return res
-        .status(500)
-        .json({ success: false, message: "Error en la base de datos" });
+      console.error("❌ Error al obtener notificaciones:", err.message); // Log the error message
+      console.error("📋 Consulta SQL ejecutada:", sql); // Log the SQL query for debugging
+      return res.status(500).json({
+        success: false,
+        message: "Error en la base de datos",
+        error: err.message,
+      });
     }
 
     res.json({ success: true, notificaciones: results });
@@ -665,12 +674,18 @@ app.get("/api/notificaciones", (req, res) => {
 app.post("/api/notificaciones", (req, res) => {
   const { id_cliente, id_promocion, titulo, mensaje, fecha_envio } = req.body;
 
+  // Validar que los campos requeridos estén presentes
   if (!id_cliente || !titulo || !mensaje || !fecha_envio) {
-    return res.status(400).json({ success: false, message: "Faltan campos" });
+    console.error("❌ Faltan campos obligatorios:", req.body);
+    return res
+      .status(400)
+      .json({ success: false, message: "Faltan campos obligatorios" });
   }
 
-  const sql = `INSERT INTO notificaciones (id_cliente, id_promocion, titulo, mensaje, fecha_envio, leida)
-               VALUES (?, ?, ?, ?, ?, 'no')`;
+  const sql = `
+    INSERT INTO notificacionesclientes (id_cliente, id_promocion, titulo, mensaje, fecha_envio, leida)
+    VALUES (?, ?, ?, ?, ?, 'no')
+  `;
 
   db.query(
     sql,
@@ -678,28 +693,36 @@ app.post("/api/notificaciones", (req, res) => {
     (err, result) => {
       if (err) {
         console.error("❌ Error al insertar notificación:", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Error en la base de datos" });
+        return res.status(500).json({
+          success: false,
+          message: "Error en la base de datos",
+          error: err.message,
+        });
       }
 
       const id = result.insertId;
-      db.query(
-        `SELECT n.*, c.nombre AS nombre_cliente FROM notificaciones n
-       JOIN clientes c ON n.id_cliente = c.id_cliente
-       WHERE n.id_notificacion = ?`,
-        [id],
-        (err2, result2) => {
-          if (err2) {
-            return res.status(500).json({
-              success: false,
-              message: "Error al obtener notificación insertada",
-            });
-          }
+      const sqlSelect = `
+        SELECT 
+          n.*, 
+          c.nombre AS nombre_cliente, 
+          p.descripcion AS promocion 
+        FROM notificacionesclientes n
+        LEFT JOIN clientes c ON n.id_cliente = c.id_cliente
+        LEFT JOIN promociones p ON n.id_promocion = p.id_promocion
+        WHERE n.id_notificacion = ?
+      `;
 
-          res.json({ success: true, notificacion: result2[0] });
+      db.query(sqlSelect, [id], (err2, result2) => {
+        if (err2) {
+          console.error("❌ Error al obtener notificación insertada:", err2);
+          return res.status(500).json({
+            success: false,
+            message: "Error al obtener notificación insertada",
+          });
         }
-      );
+
+        res.json({ success: true, notificacion: result2[0] });
+      });
     }
   );
 });
@@ -748,17 +771,24 @@ app.delete("/api/notificaciones/:id", (req, res) => {
 // 🔁 Obtener promociones
 app.get("/api/promociones", (req, res) => {
   const sql = `
-    SELECT p.id_promocion, pr.nombre AS producto, p.descripcion, 
-           CONCAT(p.descuento, '%') AS descuento, 
-           p.fecha_inicio, p.fecha_fin, p.estado
-    FROM promociones p
-    JOIN productos pr ON p.id_producto = pr.id_producto
-    ORDER BY p.fecha_inicio DESC
+    SELECT 
+      p.nombre AS producto, -- Incluye el nombre del producto
+      pr.id_promocion,
+      pr.descripcion,
+      pr.descuento,
+      pr.fecha_inicio,
+      pr.fecha_fin,
+      pr.estado
+    FROM promociones pr
+    LEFT JOIN productos p ON pr.id_producto = p.id_producto
+    WHERE pr.estado = 'activa'
   `;
   db.query(sql, (err, results) => {
     if (err) {
       console.error("❌ Error al obtener promociones:", err);
-      return res.status(500).json({ success: false, error: err });
+      return res
+        .status(500)
+        .json({ success: false, message: "Error en la base de datos" });
     }
     res.json({ success: true, promociones: results });
   });

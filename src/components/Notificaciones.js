@@ -50,6 +50,32 @@ const Notificaciones = () => {
     fetchNotificaciones();
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Obtener clientes
+        const clientesResponse = await axios.get(
+          "http://localhost:5000/api/clientes"
+        );
+        if (clientesResponse.data.success) {
+          setClientes(clientesResponse.data.clientes);
+        }
+
+        // Obtener promociones
+        const promocionesResponse = await axios.get(
+          "http://localhost:5000/api/promociones"
+        );
+        if (promocionesResponse.data.success) {
+          setPromociones(promocionesResponse.data.promociones);
+        }
+      } catch (error) {
+        console.error("❌ Error al cargar datos:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const markAsRead = (id) => {
     setNotificaciones(
       notificaciones.map((n) => (n.id === id ? { ...n, estado: "Leído" } : n))
@@ -71,6 +97,7 @@ const Notificaciones = () => {
     }
 
     try {
+      console.log("📤 Enviando datos al backend:", notificacionForm); // Log para depuración
       const response = await axios.post(
         "http://localhost:5000/api/notificaciones",
         {

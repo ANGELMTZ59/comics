@@ -47,7 +47,7 @@ const Promociones = () => {
   }, []);
 
   const abrirModal = (promocion = null) => {
-    setEditingPromocion(promocion);
+    setEditingPromocion(promocion); // Guarda la promoción completa si se está editando, o null si es nueva
     setPromocionForm(
       promocion || {
         id_producto: "",
@@ -69,9 +69,11 @@ const Promociones = () => {
     if (
       !promocionForm.id_producto ||
       !promocionForm.descripcion ||
-      !promocionForm.descuento
+      !promocionForm.descuento ||
+      !promocionForm.fecha_inicio ||
+      !promocionForm.fecha_fin
     ) {
-      alert("Completa todos los campos");
+      alert("Completa todos los campos obligatorios.");
       return;
     }
 
@@ -79,7 +81,7 @@ const Promociones = () => {
       if (editingPromocion) {
         // Si estamos editando, hacer PUT
         const response = await axios.put(
-          `http://localhost:5000/api/promociones/${editingPromocion.id_promocion}`,
+          `http://localhost:5000/api/promociones/${editingPromocion.id_promocion}`, // Usa el ID de la promoción desde editingPromocion
           promocionForm
         );
         if (response.data.success) {
@@ -146,7 +148,11 @@ const Promociones = () => {
         <h2>
           <FaTags /> Gestión de Promociones
         </h2>
-        <button className="btn-agregar" onClick={() => abrirModal()}>
+        {/* Botón de agregar promoción */}
+        <button
+          className="btn-agregar"
+          onClick={() => abrirModal()} // Abre el modal para agregar una nueva promoción
+        >
           <FaPlus /> Agregar Promoción
         </button>
       </div>
@@ -183,7 +189,7 @@ const Promociones = () => {
                   (p.producto &&
                     p.producto
                       .toLowerCase()
-                      .includes(searchTerm.toLowerCase())) ||
+                      .includes(searchTerm.toLowerCase())) || // Corrige el acceso al campo producto
                   (p.descripcion &&
                     p.descripcion
                       .toLowerCase()
@@ -192,7 +198,7 @@ const Promociones = () => {
               .map((p, index) => (
                 <tr key={p.id_promocion}>
                   <td>{index + 1}</td>
-                  <td>{p.producto}</td>
+                  <td>{p.producto}</td> {/* Muestra el nombre del producto */}
                   <td>{p.descripcion}</td>
                   <td>{p.descuento}</td>
                   <td>{new Date(p.fecha_inicio).toLocaleDateString()}</td>
@@ -220,22 +226,20 @@ const Promociones = () => {
       {modalVisible && (
         <div className="modal">
           <div className="modal-content">
-            {/* Cambiar título dependiendo si estamos en modo editar o ver */}
-            <h3>{editingPromocion ? "Editar Promoción" : "Ver Promoción"}</h3>
-
+            <h3>
+              {editingPromocion ? "Editar Promoción" : "Agregar Promoción"}
+            </h3>{" "}
+            {/* Cambia el título */}
             {/* Producto */}
             <label>Producto:</label>
             <select
               value={promocionForm.id_producto}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    id_producto: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  id_producto: e.target.value,
+                })
+              }
             >
               <option value="">Seleccione un Producto</option>
               {productos.map((p) => (
@@ -244,96 +248,74 @@ const Promociones = () => {
                 </option>
               ))}
             </select>
-
             {/* Descripción */}
             <label>Descripción:</label>
             <input
               type="text"
               value={promocionForm.descripcion}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    descripcion: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  descripcion: e.target.value,
+                })
+              }
             />
-
             {/* Descuento */}
             <label>Descuento (%):</label>
             <input
               type="number"
               value={promocionForm.descuento}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    descuento: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  descuento: e.target.value,
+                })
+              }
             />
-
             {/* Fecha de Inicio */}
             <label>Fecha de Inicio:</label>
             <input
               type="date"
               value={promocionForm.fecha_inicio}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    fecha_inicio: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  fecha_inicio: e.target.value,
+                })
+              }
             />
-
             {/* Fecha de Fin */}
             <label>Fecha de Fin:</label>
             <input
               type="date"
               value={promocionForm.fecha_fin}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    fecha_fin: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  fecha_fin: e.target.value,
+                })
+              }
             />
-
             {/* Estado */}
             <label>Estado:</label>
             <select
               value={promocionForm.estado}
-              onChange={(e) => {
-                if (editingPromocion) {
-                  setPromocionForm({
-                    ...promocionForm,
-                    estado: e.target.value,
-                  });
-                }
-              }}
-              disabled={!editingPromocion} // Solo habilitar en modo editar
+              onChange={(e) =>
+                setPromocionForm({
+                  ...promocionForm,
+                  estado: e.target.value,
+                })
+              }
             >
               <option value="activa">Activa</option>
               <option value="inactiva">Inactiva</option>
             </select>
-
             <div className="modal-buttons">
-              {/* Solo mostrar el botón de guardar en modo de edición */}
-              {editingPromocion && (
-                <button className="btn-guardar" onClick={guardarPromocion}>
-                  Guardar
-                </button>
-              )}
+              {/* Botón de guardar/agregar */}
+              <button className="btn-guardar" onClick={guardarPromocion}>
+                {editingPromocion ? "Guardar Cambios" : "Agregar"}
+              </button>
+              {/* Botón de cerrar */}
               <button className="btn-cerrar" onClick={cerrarModal}>
                 Cerrar
               </button>
