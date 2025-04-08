@@ -34,17 +34,10 @@ const Clientes = () => {
     const fetchClientes = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/clientes");
-        console.log("🔍 Respuesta de API clientes:", response.data);
-
         if (response.data.success && Array.isArray(response.data.clientes)) {
           setClientes(response.data.clientes);
-          console.log(
-            "✅ Clientes guardados en estado:",
-            response.data.clientes
-          );
         } else {
-          console.warn("⚠ No se encontraron clientes válidos en la API");
-          setClientes([]); // Limpia el estado si la respuesta no es válida
+          setClientes([]); // Limpia el estado si no hay datos válidos
         }
       } catch (error) {
         console.error("❌ Error al obtener clientes:", error);
@@ -59,9 +52,14 @@ const Clientes = () => {
   const refreshClientes = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/clientes");
-      setClientes(response.data);
+      if (response.data.success) {
+        setClientes(response.data.clientes); // ✅ Aquí está el arreglo correcto
+      } else {
+        setClientes([]); // Si no hay éxito, vacía la lista
+      }
     } catch (error) {
       console.error("❌ Error al refrescar clientes:", error);
+      setClientes([]);
     }
   };
 
@@ -79,12 +77,15 @@ const Clientes = () => {
   };
 
   const abrirModalEditar = (cliente) => {
-    setEditingClient(cliente); // ✅ Hasta aquí bien
+    setEditingClient(cliente);
     setClienteForm({
       nombre: cliente.nombre,
       email: cliente.email,
       telefono: cliente.telefono,
       direccion: cliente.direccion,
+      fecha_registro: cliente.fecha_registro
+        ? cliente.fecha_registro.split("T")[0]
+        : "", // Formato 'YYYY-MM-DD'
       nivel_membresia: cliente.nivel_membresia,
       frecuencia_compra: cliente.frecuencia_compra,
     });
@@ -107,15 +108,12 @@ const Clientes = () => {
 
   // ✅ Guardar cliente (Nuevo o Editado)
   const guardarCliente = async () => {
-    console.log("🛠 GUARDANDO CLIENTE...");
-    console.log("¿Está editando?", editingClient);
-    console.log("Formulario actual:", clienteForm);
-
     if (
       !clienteForm.nombre ||
       !clienteForm.email ||
       !clienteForm.telefono ||
-      !clienteForm.direccion
+      !clienteForm.direccion ||
+      !clienteForm.fecha_registro
     ) {
       alert("⚠️ Por favor, completa todos los campos.");
       return;
@@ -123,38 +121,30 @@ const Clientes = () => {
 
     try {
       if (editingClient) {
-        const id = clienteForm.id_cliente || editingClient?.id_cliente;
-        console.log("✏️ Enviando PUT a:", `${API_URL}/clientes/${id}`);
-
+        // Editar cliente
         const response = await axios.put(
-          `${API_URL}/clientes/${id}`,
+          `http://localhost:5000/api/clientes/${editingClient.id_cliente}`,
           clienteForm
         );
-
-        console.log("🧾 Respuesta al editar:", response.data);
-
         if (response.data.success) {
-          setClientes(
-            clientes.map((c) =>
-              c.id_cliente === id ? { ...c, ...clienteForm } : c
-            )
-          );
-          alert("✅ Cliente actualizado correctamente");
+          alert("✅ Cliente editado correctamente");
+          refreshClientes(); // Refrescar lista después de editar
         } else {
-          alert("❌ Error al actualizar el cliente");
+          alert("❌ Error al editar el cliente");
         }
       } else {
-        // CREACIÓN
-        const response = await axios.post(`${API_URL}/clientes`, clienteForm);
-
-        if (response.data.success && response.data.cliente) {
+        // Agregar cliente
+        const response = await axios.post(
+          "http://localhost:5000/api/clientes",
+          clienteForm
+        );
+        if (response.data.success) {
           alert("✅ Cliente agregado correctamente");
-          refreshClientes(); // Refresh the client list
+          refreshClientes(); // Refrescar lista después de agregar
         } else {
           alert("❌ Error al agregar el cliente");
         }
       }
-
       cerrarModal();
     } catch (error) {
       console.error("❌ Error al guardar cliente:", error);
@@ -163,53 +153,37 @@ const Clientes = () => {
   };
 
   const editarCliente = async () => {
+    // Verifica si el cliente tiene un ID válido
     if (!clienteEditado.id_cliente) {
       alert("Cliente no tiene un ID válido");
       return;
     }
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/clientes/${clienteEditado.id_cliente}`,
-        clienteEditado
-      );
-      alert("✅ Cliente editado correctamente");
-    } catch (error) {
-      console.error("❌ Error al guardar cliente:", error);
-    }
-  };
-
-  // 🗑 Eliminar cliente
-  const eliminarCliente = async (id_cliente) => {
+    // Verifica si el objeto clienteEditado tiene los campos necesarios
     if (
-      !window.confirm("¿Estás seguro de que quieres eliminar este cliente?")
+      !clienteEditado.nombre ||
+      !clienteEditado.email ||
+      !clienteEditado.telefono ||
+      !clienteEditado.direccion
     ) {
+      alert("⚠️ Por favor, completa todos los campos.");
       return;
     }
 
+    // Verifica que los datos sean correctos antes de enviarlos
+    console.log("Cliente a editar:", clienteEditado);
+
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/clientes/${id_cliente}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        }
+      // Realiza la solicitud PUT
+      const response = await axios.put(
+        `http://localhost:5000/api/clientes/${clienteEditado.id_cliente}`,
+        clienteEditado
       );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // 🔹 Eliminar cliente del estado local
-        setClientes(
-          clientes.filter((cliente) => cliente.id_cliente !== id_cliente)
-        );
-        alert("✅ Cliente eliminado correctamente");
-      } else {
-        alert("❌ Error al eliminar el cliente");
-      }
+      // Si la solicitud es exitosa
+      alert("✅ Cliente editado correctamente");
     } catch (error) {
-      console.error("❌ Error al eliminar cliente:", error);
-      alert("❌ Error en el servidor");
+      console.error("❌ Error al editar cliente:", error);
+      alert("❌ Error al editar cliente. Intenta de nuevo.");
     }
   };
 
@@ -219,6 +193,25 @@ const Clientes = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
     XLSX.writeFile(workbook, "Clientes.xlsx");
+  };
+
+  const eliminarCliente = async (id_cliente) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:5000/api/clientes/${id_cliente}`
+        );
+        if (response.data.success) {
+          alert("✅ Cliente eliminado correctamente");
+          refreshClientes(); // Refrescar la lista de clientes
+        } else {
+          alert("❌ Error al eliminar el cliente");
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar cliente:", error);
+        alert("❌ Error al eliminar cliente");
+      }
+    }
   };
 
   return (
@@ -272,39 +265,43 @@ const Clientes = () => {
                       campo.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                 )
-
-                .map((cliente, index) => (
-                  <tr key={cliente.id_cliente}>
-                    <td>{index + 1}</td>
-                    <td>{cliente.nombre || "No disponible"}</td>
-                    <td>{cliente.email || "Sin email"}</td>
-                    <td>{cliente.telefono || "Sin teléfono"}</td>
-                    <td>{cliente.direccion || "Sin dirección"}</td>
-                    <td>
-                      {cliente.fecha_registro
-                        ? new Date(cliente.fecha_registro).toLocaleDateString(
-                            "es-MX"
-                          )
-                        : "Sin registro"}
-                    </td>
-                    <td>{cliente.nivel_membresia || "Sin nivel"}</td>
-                    <td>{cliente.frecuencia_compra || "Desconocida"}</td>
-                    <td className="acciones">
-                      <button
-                        className="btn-editar"
-                        onClick={() => abrirModalEditar(cliente)}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="btn-eliminar"
-                        onClick={() => eliminarCliente(cliente.id_cliente)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                .map(
+                  (
+                    cliente,
+                    index // Aquí estás usando correctamente 'cliente'
+                  ) => (
+                    <tr key={cliente.id_cliente}>
+                      <td>{index + 1}</td>
+                      <td>{cliente.nombre || "No disponible"}</td>
+                      <td>{cliente.email || "Sin email"}</td>
+                      <td>{cliente.telefono || "Sin teléfono"}</td>
+                      <td>{cliente.direccion || "Sin dirección"}</td>
+                      <td>
+                        {cliente.fecha_registro
+                          ? new Date(cliente.fecha_registro).toLocaleDateString(
+                              "es-MX"
+                            )
+                          : "Sin registro"}
+                      </td>
+                      <td>{cliente.nivel_membresia || "Sin nivel"}</td>
+                      <td>{cliente.frecuencia_compra || "Desconocida"}</td>
+                      <td className="acciones">
+                        <button
+                          className="btn-editar"
+                          onClick={() => abrirModalEditar(cliente)} // Usas 'cliente' aquí
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="btn-eliminar"
+                          onClick={() => eliminarCliente(cliente.id_cliente)} // Y también aquí
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                )
             ) : (
               <tr>
                 <td colSpan="9">⚠ No hay clientes disponibles</td>
@@ -351,7 +348,52 @@ const Clientes = () => {
                   setClienteForm({ ...clienteForm, direccion: e.target.value })
                 }
               />
+
+              <input
+                type="date"
+                placeholder="Fecha de Registro"
+                value={
+                  clienteForm.fecha_registro
+                    ? clienteForm.fecha_registro.split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setClienteForm({
+                    ...clienteForm,
+                    fecha_registro: e.target.value,
+                  })
+                }
+              />
+
+              <select
+                value={clienteForm.nivel_membresia}
+                onChange={(e) =>
+                  setClienteForm({
+                    ...clienteForm,
+                    nivel_membresia: e.target.value,
+                  })
+                }
+              >
+                <option value="regular">Regular</option>
+                <option value="gold">Gold</option>
+                <option value="platinum">Platinum</option>
+              </select>
+
+              <select
+                value={clienteForm.frecuencia_compra}
+                onChange={(e) =>
+                  setClienteForm({
+                    ...clienteForm,
+                    frecuencia_compra: e.target.value,
+                  })
+                }
+              >
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+              </select>
             </div>
+
             <div className="modal-buttons">
               <button className="btn-guardar" onClick={guardarCliente}>
                 Guardar

@@ -301,7 +301,18 @@ app.post("/api/client-login", (req, res) => {
 
 // ✅ Obtener todos los clientes
 app.get("/api/clientes", (req, res) => {
-  const sql = "SELECT id_cliente, nombre FROM clientes";
+  const sql = `
+    SELECT 
+      id_cliente, 
+      nombre, 
+      email, 
+      telefono, 
+      direccion, 
+      fecha_registro, 
+      nivel_membresia, 
+      frecuencia_compra 
+    FROM clientes
+  `;
   db.query(sql, (err, results) => {
     if (err) {
       console.error("❌ Error al obtener clientes:", err);
@@ -313,7 +324,6 @@ app.get("/api/clientes", (req, res) => {
   });
 });
 
-// ✅ Ruta para editar cliente existente
 app.put("/api/clientes/:id", (req, res) => {
   const { id } = req.params;
   const {
@@ -323,17 +333,28 @@ app.put("/api/clientes/:id", (req, res) => {
     direccion,
     nivel_membresia,
     frecuencia_compra,
+    fecha_registro,
   } = req.body;
 
-  if (!nombre || !email || !telefono || !direccion) {
+  // Verificación de campos obligatorios
+  if (!nombre || !email || !telefono || !direccion || !fecha_registro) {
     return res
       .status(400)
       .json({ success: false, message: "Faltan datos obligatorios" });
   }
 
-  const sql = `UPDATE clientes 
-               SET nombre = ?, email = ?, telefono = ?, direccion = ?, nivel_membresia = ?, frecuencia_compra = ? 
-               WHERE id_cliente = ?`;
+  // Formatear la fecha correctamente
+  const fechaFormateada = new Date(fecha_registro)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const sql = `
+    UPDATE clientes SET
+      nombre = ?, email = ?, telefono = ?, direccion = ?, nivel_membresia = ?,
+      frecuencia_compra = ?, fecha_registro = ?
+    WHERE id_cliente = ?
+  `;
 
   db.query(
     sql,
@@ -344,17 +365,29 @@ app.put("/api/clientes/:id", (req, res) => {
       direccion,
       nivel_membresia,
       frecuencia_compra,
+      fechaFormateada,
       id,
     ],
     (err, result) => {
       if (err) {
         console.error("❌ Error al actualizar cliente:", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Error en la BD" });
+        return res.status(500).json({
+          success: false,
+          message: "Error en la base de datos",
+          error: err,
+        });
       }
 
-      res.json({ success: true, message: "Cliente actualizado correctamente" });
+      if (result.affectedRows > 0) {
+        return res.json({
+          success: true,
+          message: "Cliente actualizado correctamente",
+        });
+      } else {
+        return res
+          .status(404)
+          .json({ success: false, message: "Cliente no encontrado" });
+      }
     }
   );
 });
@@ -377,74 +410,82 @@ app.delete("/api/clientes/:id", (req, res) => {
   });
 });
 
-// ✅ Crear un nuevo cliente
-app.post("/api/clientes", async (req, res) => {
+app.post("/api/clientes", (req, res) => {
   const {
     nombre,
     email,
-    contraseña, // Use 'contraseña' to match the database column name
     telefono,
     direccion,
-    nivel_membresia,
-    frecuencia_compra,
+    fecha_registro,
+    nivel_membresia = "regular",
+    frecuencia_compra = "baja",
   } = req.body;
 
-  // Validate required fields
-  if (!nombre || !email || !contraseña) {
+  // Asegúrate de que los datos se reciban correctamente
+  console.log("Datos recibidos para insertar cliente:", req.body);
+
+  // Validación de campos
+  if (!nombre || !email || !telefono || !direccion || !fecha_registro) {
     return res
       .status(400)
       .json({ success: false, message: "Faltan datos obligatorios" });
   }
 
-  try {
-    // Hash the password before storing it
-    const hashedPassword = await bcrypt.hash(contraseña, 10);
+  // Formatear la fecha para MySQL (asegurando el formato 'YYYY-MM-DD HH:mm:ss')
+  const fechaFormateada = new Date(fecha_registro)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
 
-    const sql = `INSERT INTO clientes (nombre, email, contraseña, telefono, direccion, nivel_membresia, frecuencia_compra, fecha_registro)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
+  const sql = `
+    INSERT INTO clientes 
+    (nombre, email, telefono, direccion, nivel_membresia, frecuencia_compra, fecha_registro)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
 
-    db.query(
-      sql,
-      [
-        nombre,
-        email,
-        hashedPassword,
-        telefono,
-        direccion,
-        nivel_membresia,
-        frecuencia_compra,
-      ],
-      (err, result) => {
-        if (err) {
-          console.error("❌ Error al insertar cliente:", err);
-          return res
-            .status(500)
-            .json({ success: false, message: "Error en la base de datos" });
-        }
+  db.query(
+    sql,
+    [
+      nombre,
+      email,
+      telefono,
+      direccion,
+      nivel_membresia,
+      frecuencia_compra,
+      fechaFormateada,
+    ],
+    (err, result) => {
+      if (err) {
+        // Log del error detallado para depuración
+        console.error("❌ Error al insertar cliente:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Error en la base de datos",
+          error: err,
+        });
+      }
 
-        const id = result.insertId;
-        const sqlGet = "SELECT * FROM clientes WHERE id_cliente = ?";
-
-        db.query(sqlGet, [id], (err2, clienteResult) => {
+      const id = result.insertId;
+      db.query(
+        "SELECT * FROM clientes WHERE id_cliente = ?",
+        [id],
+        (err2, clienteResult) => {
           if (err2) {
             return res.status(500).json({
               success: false,
               message: "Error al obtener cliente insertado",
+              error: err2,
             });
           }
-
           res.json({
             success: true,
             message: "Cliente agregado correctamente",
             cliente: clienteResult[0],
           });
-        });
-      }
-    );
-  } catch (error) {
-    console.error("❌ Error al procesar la contraseña:", error);
-    res.status(500).json({ success: false, message: "Error en el servidor" });
-  }
+        }
+      );
+    }
+  );
 });
 
 /* ------------------------------------- */
@@ -1207,19 +1248,21 @@ app.get("/api/ordenesproveedor", (req, res) => {
       pr.nombre AS proveedor,
       o.cantidad,
       o.estado,
-      o.fecha_orden
+      o.fecha_orden,
+      u.nombre AS usuario -- Incluye el nombre del usuario que solicitó la orden
     FROM ordenesproveedores o
     JOIN productos p ON o.id_producto = p.id_producto
     JOIN proveedores pr ON o.id_proveedor = pr.id_proveedor
+    LEFT JOIN usuarios u ON o.id_usuario = u.id_usuario -- Relación con la tabla de usuarios
     ORDER BY o.id_orden DESC
   `;
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error al obtener órdenes:", err); // Aquí es donde deberías revisar qué está fallando
+      console.error("❌ Error al obtener órdenes:", err);
       return res.status(500).json({ success: false, error: err });
     }
-    console.log("Órdenes obtenidas:", results); // Verifica que los resultados sean correctos
+    console.log("Órdenes obtenidas:", results);
     res.json({ success: true, ordenes: results });
   });
 });
@@ -1338,17 +1381,6 @@ app.get("/api/recepciones", (req, res) => {
 
   let sql = `
     SELECT r.id_recepcion,
-           r.numero_documento AS numero, -- Use numero_documento instead of numero
-           pr.nombre AS proveedor,
-           r.almacen,
-           r.fecha_recepcion,
-           r.fecha_documento,
-           r.numero_documento,
-           r.tipo_producto,
-           r.cantidad,
-           r.marca,
-           r.estatus,
-           r.total
     FROM recepcionesmercancia r
     JOIN proveedores pr ON r.id_proveedor = pr.id_proveedor
     WHERE 1=1

@@ -22,7 +22,33 @@ const OrdenesCompra = () => {
     id_proveedor: "",
     fechaOrden: "", // Este lo formateamos antes de enviarlo
     estado: "pendiente",
+    id_usuario: "", // Nuevo campo para el empleado que solicita la orden
   });
+
+  const [usuarios, setUsuarios] = useState([]); // Lista de usuarios
+  const usuarioAutenticado = 1; // Simula el ID del usuario autenticado
+
+  useEffect(() => {
+    setNuevaOrden((prevState) => ({
+      ...prevState,
+      id_usuario: usuarioAutenticado, // Asigna el ID del usuario autenticado
+    }));
+  }, [usuarioAutenticado]);
+
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/usuarios`);
+        if (response.data.success) {
+          setUsuarios(response.data.usuarios);
+        }
+      } catch (error) {
+        console.error("❌ Error al obtener usuarios:", error);
+      }
+    };
+
+    fetchUsuarios();
+  }, []);
 
   // Obtener productos desde la BD
   const [productos, setProductos] = useState([]);
@@ -104,59 +130,82 @@ const OrdenesCompra = () => {
     }));
   };
 
-  // Actualizar la orden
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Obtener el ID de la orden de la que estamos actualizando los datos
-    const idOrden = nuevaOrden.id_orden; // Este es el ID de la orden a actualizar
+  const guardarOrden = async () => {
+    if (
+      !nuevaOrden.id_producto ||
+      !nuevaOrden.cantidad ||
+      !nuevaOrden.id_proveedor ||
+      !nuevaOrden.estado ||
+      !nuevaOrden.id_usuario
+    ) {
+      alert(
+        "⚠️ Por favor, complete todos los campos obligatorios antes de continuar."
+      );
+      return;
+    }
 
     try {
-      const response = await axios.put(
-        `${API_URL}/ordenesproveedor/${idOrden}`,
-        {
-          id_producto: nuevaOrden.id_producto,
-          cantidad: nuevaOrden.cantidad,
-          id_proveedor: nuevaOrden.id_proveedor,
-          estado: nuevaOrden.estado,
-          // Otros campos que puedan ser necesarios
+      if (nuevaOrden.id_orden) {
+        // Actualizar orden existente
+        const response = await axios.put(
+          `${API_URL}/ordenesproveedor/${nuevaOrden.id_orden}`,
+          nuevaOrden
+        );
+        if (response.data.success) {
+          alert("✅ La orden de compra ha sido actualizada exitosamente.");
+        } else {
+          alert(
+            "❌ Ocurrió un error al intentar actualizar la orden de compra. Por favor, intente nuevamente."
+          );
         }
-      );
-      if (response.data.success) {
-        fetchOrdenes(); // Recargar las órdenes
-        setModalOpen(false);
-        setNuevaOrden({
-          producto: "",
-          cantidad: "",
-          proveedor: "",
-          fechaOrden: "",
-          estado: "pendiente",
-        });
+      } else {
+        // Crear nueva orden
+        const response = await axios.post(
+          `${API_URL}/ordenesproveedor`,
+          nuevaOrden
+        );
+        if (response.data.success) {
+          alert("✅ La nueva orden de compra ha sido creada exitosamente.");
+        } else {
+          alert(
+            "❌ Ocurrió un error al intentar crear la orden de compra. Por favor, intente nuevamente."
+          );
+        }
       }
+
+      setModalOpen(false);
+      setNuevaOrden({
+        id_producto: "",
+        cantidad: "",
+        id_proveedor: "",
+        fechaOrden: "",
+        estado: "pendiente",
+        id_usuario: usuarioAutenticado, // Restablece el ID del usuario autenticado
+      });
+      fetchOrdenes(); // Refrescar las órdenes después de agregar o editar
     } catch (error) {
-      console.error("❌ Error al agregar o actualizar orden:", error);
-      alert("Hubo un error al agregar o actualizar la orden.");
+      console.error("❌ Error al guardar la orden:", error);
+      alert(
+        "❌ Ha ocurrido un error inesperado al procesar la solicitud. Por favor, revise los detalles en la consola o intente nuevamente."
+      );
     }
   };
 
   const handleEditClick = (orden) => {
-    const productoSeleccionado = productos.find(
-      (p) => p.nombre === orden.producto
-    );
-    const proveedorSeleccionado = proveedores.find(
-      (p) => p.nombre === orden.proveedor
-    );
-
     setNuevaOrden({
-      id_orden: orden.id_orden,
-      id_producto: productoSeleccionado?.id_producto || "",
+      id_orden: orden.id_orden, // Incluye el ID de la orden para la edición
+      id_producto:
+        productos.find((p) => p.nombre === orden.producto)?.id_producto || "",
       cantidad: orden.cantidad,
-      id_proveedor: proveedorSeleccionado?.id_proveedor || "",
-      fechaOrden: orden.fecha_orden?.slice(0, 10), // "2025-04-06"
+      id_proveedor:
+        proveedores.find((p) => p.nombre === orden.proveedor)?.id_proveedor ||
+        "",
+      fechaOrden: orden.fecha_orden?.slice(0, 10), // Formato YYYY-MM-DD
       estado: orden.estado,
+      id_usuario:
+        usuarios.find((u) => u.nombre === orden.usuario)?.id_usuario || "",
     });
-
-    setModalOpen(true);
+    setModalOpen(true); // Abre el modal para editar
   };
 
   return (
@@ -183,6 +232,7 @@ const OrdenesCompra = () => {
                 <th>Proveedor</th>
                 <th>Estado</th>
                 <th>Fecha de Orden</th>
+                <th>Usuario</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -193,7 +243,13 @@ const OrdenesCompra = () => {
                   <td>{orden.cantidad}</td>
                   <td>{orden.proveedor}</td>
                   <td>{orden.estado}</td>
-                  <td>{orden.fecha_orden || "N/A"}</td>
+                  <td>
+                    {orden.fecha_orden
+                      ? new Date(orden.fecha_orden).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+                  <td>{orden.usuario || "Desconocido"}</td>{" "}
+                  {/* Muestra el nombre del usuario */}
                   <td className="acciones">
                     <button
                       className="btn-editar"
@@ -222,9 +278,9 @@ const OrdenesCompra = () => {
             <h3>
               {nuevaOrden.id_orden
                 ? "Editar Orden de Compra"
-                : "Agregar Orden de Compra"}
+                : "Agregar Nueva Orden de Compra"}
             </h3>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => e.preventDefault()}>
               <label>Producto</label>
               <select
                 name="id_producto"
@@ -232,6 +288,7 @@ const OrdenesCompra = () => {
                 onChange={handleChange}
                 required
               >
+                <option value="">Seleccione un producto</option>
                 {productos.map((producto) => (
                   <option
                     key={producto.id_producto}
@@ -267,6 +324,7 @@ const OrdenesCompra = () => {
                 onChange={handleChange}
                 required
               >
+                <option value="">Seleccione un proveedor</option>
                 {proveedores.map((proveedor) => (
                   <option
                     key={proveedor.id_proveedor}
@@ -288,13 +346,32 @@ const OrdenesCompra = () => {
                 <option value="cancelada">Cancelada</option>
               </select>
 
-              <button type="submit" className="btn-guardar">
-                <FaPlus /> {nuevaOrden.id_orden ? "Actualizar" : "Agregar"}
+              <label>Usuario</label>
+              <select
+                name="id_usuario"
+                value={nuevaOrden.id_usuario}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Seleccione un usuario</option>
+                {usuarios.map((usuario) => (
+                  <option key={usuario.id_usuario} value={usuario.id_usuario}>
+                    {usuario.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className="btn-guardar"
+                onClick={guardarOrden}
+              >
+                {nuevaOrden.id_orden ? "Guardar Cambios" : "Crear Orden"}
               </button>
             </form>
 
             <button className="btn-cerrar" onClick={() => setModalOpen(false)}>
-              <FaTimes />
+              <FaTimes /> Cerrar
             </button>
           </div>
         </div>
