@@ -22,6 +22,7 @@ const db = mysql.createConnection({
   user: process.env.DB_USERNAME || "root",
   password: process.env.DB_PASSWORD || "GZTnIwtXCWSzkWusVmMdvBQyytEfOibP",
   database: process.env.DB_DATABASE || "comicstore",
+  connection: process.env.DB_CONNECTION || "mysql",
 });
 
 db.connect((err) => {
