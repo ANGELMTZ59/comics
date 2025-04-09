@@ -15,13 +15,13 @@ app.use(cors());
 // ✅ Clave para JWT (usar variable de entorno o un valor predeterminado)
 const SECRET_KEY = process.env.JWT_SECRET || "tu_secreto"; // Asegúrate de que JWT_SECRET esté definido en el archivo .env
 
-// 📌 Configurar conexión a MySQL usando variables de entorno
+// 📌 Configurar conexión a MySQL usando variables de entorno con valores por defecto
 const db = mysql.createConnection({
-  host: (process.env.DB_HOST = nozomi.proxy.rlwy.net),
-  port: (process.env.DB_PORT = 42598),
-  user: (process.env.DB_USERNAME = root),
-  password: (process.env.DB_PASSWORD = GZTnIwtXCWSzkWusVmMdvBQyytEfOibP),
-  database: (process.env.DB_DATABASE = comicsto),
+  host: process.env.DB_HOST || "nozomi.proxy.rlwy.net", // updated URL as string
+  port: process.env.DB_PORT || 42598,
+  user: process.env.DB_USERNAME || "root",
+  password: process.env.DB_PASSWORD || "GZTnIwtXCWSzkWusVmMdvBQyytEfOibP",
+  database: process.env.DB_DATABASE || "comicstore",
 });
 
 db.connect((err) => {
@@ -1248,11 +1248,11 @@ app.get("/api/ordenesproveedor", (req, res) => {
       o.cantidad,
       o.estado,
       o.fecha_orden,
-      u.nombre AS usuario -- Incluye el nombre del usuario que solicitó la orden
+      u.nombre AS usuario
     FROM ordenesproveedores o
     JOIN productos p ON o.id_producto = p.id_producto
     JOIN proveedores pr ON o.id_proveedor = pr.id_proveedor
-    LEFT JOIN usuarios u ON o.id_usuario = u.id_usuario -- Relación con la tabla de usuarios
+    LEFT JOIN usuarios u ON o.id_usuario = u.id_usuario
     ORDER BY o.id_orden DESC
   `;
 
@@ -1267,25 +1267,17 @@ app.get("/api/ordenesproveedor", (req, res) => {
 });
 
 app.post("/api/ordenesproveedor", (req, res) => {
-  const {
-    id_producto,
-    cantidad,
-    id_proveedor,
-    fecha_orden, // La fecha que recibes del frontend
-    estado,
-  } = req.body;
+  const { id_producto, cantidad, id_proveedor, fecha_orden, estado } = req.body;
 
-  // Asegúrate de que la fecha esté correctamente formateada
-  const fechaOrden = fecha_orden ? new Date(fecha_orden) : new Date(); // Si no envías la fecha, usa la fecha actual
+  const fechaOrden = fecha_orden ? new Date(fecha_orden) : new Date();
 
-  // Verifica que las fechas sean correctas
   if (isNaN(fechaOrden)) {
     return res
       .status(400)
       .json({ success: false, message: "Fecha de orden no válida" });
   }
 
-  const fechaOrdenISO = fechaOrden.toISOString().slice(0, 19).replace("T", " "); // Formato adecuado para SQL
+  const fechaOrdenISO = fechaOrden.toISOString().slice(0, 19).replace("T", " ");
 
   const sql = `INSERT INTO ordenesproveedores (id_producto, cantidad, id_proveedor, fecha_orden, estado) VALUES (?, ?, ?, ?, ?)`;
 
@@ -1295,7 +1287,7 @@ app.post("/api/ordenesproveedor", (req, res) => {
       [id_producto, cantidad, id_proveedor, fechaOrdenISO, estado],
       (err, result) => {
         if (err) {
-          console.error("❌ Error al insertar la orden", err); // Asegúrate de ver el error aquí
+          console.error("❌ Error al insertar la orden", err);
           return res.status(500).json({ success: false, error: err.message });
         }
         res.json({ success: true, id: result.insertId });
@@ -1326,8 +1318,7 @@ app.get("/api/ordenesproveedor/:id", (req, res) => {
 });
 
 app.put("/api/ordenesproveedor/:id", (req, res) => {
-  // Maneja la lógica para actualizar una orden
-  const { id } = req.params; // Extrae el ID de la orden desde la URL
+  const { id } = req.params;
   const { id_producto, cantidad, id_proveedor, estado } = req.body;
 
   const sql = `
@@ -1397,7 +1388,7 @@ app.get("/api/recepciones", (req, res) => {
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error en la consulta SQL:", err); // Log the SQL error
+      console.error("❌ Error en la consulta SQL:", err);
       return res.status(500).json({
         success: false,
         message: "Error en la consulta SQL.",
@@ -1405,7 +1396,7 @@ app.get("/api/recepciones", (req, res) => {
       });
     }
 
-    console.log("📋 Datos obtenidos desde la BD:", results); // Log the fetched data
+    console.log("📋 Datos obtenidos desde la BD:", results);
     res.json({ success: true, recepciones: results });
   });
 });
@@ -1466,13 +1457,13 @@ app.post("/api/recepciones", (req, res) => {
             almacen,
             fecha_recepcion,
             fecha_documento || null,
-            nuevoNumeroDocumento, // Utilizamos el nuevo número de documento generado
+            nuevoNumeroDocumento,
             tipo_producto,
             cantidad,
             marca,
             estatus,
             total,
-            nuevoNumeroRecepcion, // Utilizamos el nuevo número de recepción generado
+            nuevoNumeroRecepcion,
           ];
 
           db.query(sql, valores, (err3, result) => {
@@ -1504,10 +1495,8 @@ app.put("/api/recepciones/:id", (req, res) => {
     total,
   } = req.body;
 
-  // Log the data received from the frontend
   console.log("📥 Datos recibidos del frontend:", req.body);
 
-  // Validar campos obligatorios
   if (
     !id_proveedor ||
     !almacen ||
@@ -1535,7 +1524,7 @@ app.put("/api/recepciones/:id", (req, res) => {
     id_proveedor,
     almacen,
     fecha_recepcion,
-    fecha_documento || null, // Permitir null para fecha_documento
+    fecha_documento || null,
     numero_documento,
     tipo_producto,
     cantidad,
@@ -1556,8 +1545,8 @@ app.put("/api/recepciones/:id", (req, res) => {
 
 // Eliminar una recepción
 app.delete("/api/recepciones/:id", (req, res) => {
-  const { id } = req.params; // Este ID debe ser recibido correctamente del frontend
-  console.log("ID recibido para eliminación:", id); // Verifica que el ID llegue correctamente
+  const { id } = req.params;
+  console.log("ID recibido para eliminación:", id);
   const sql = "DELETE FROM recepcionesmercancia WHERE id_recepcion = ?";
   db.query(sql, [id], (err, result) => {
     if (err) {
@@ -1620,12 +1609,11 @@ app.post("/api/usuarios", async (req, res) => {
 // Actualizar empleado
 app.put("/api/usuarios/:id", async (req, res) => {
   const { nombre, email, password, telefono, id_rol, activo } = req.body;
-  const { id } = req.params; // El ID del usuario a actualizar
+  const { id } = req.params;
 
   let sql;
   let valores;
 
-  // Si se incluye la contraseña, la actualiza
   if (password) {
     const hashedPassword = await bcrypt.hash(password, 10);
     sql = `
@@ -1633,15 +1621,7 @@ app.put("/api/usuarios/:id", async (req, res) => {
       SET nombre = ?, email = ?, contraseña = ?, telefono = ?, id_rol = ?, activo = ?
       WHERE id_usuario = ?
     `;
-    valores = [
-      nombre,
-      email,
-      hashedPassword,
-      telefono,
-      id_rol,
-      activo, // Actualizamos el estado 'activo' también
-      id,
-    ];
+    valores = [nombre, email, hashedPassword, telefono, id_rol, activo, id];
   } else {
     sql = `
       UPDATE usuarios
@@ -1651,7 +1631,6 @@ app.put("/api/usuarios/:id", async (req, res) => {
     valores = [nombre, email, telefono, id_rol, activo, id];
   }
 
-  // Ejecutar la actualización en la base de datos
   db.query(sql, valores, (err) => {
     if (err) {
       console.error("❌ Error al actualizar usuario:", err);
@@ -1691,9 +1670,9 @@ app.get("/api/movimientos", (req, res) => {
     SELECT 
       m.id_movimiento,
       m.tipo_movimiento,
-      p.nombre AS producto, -- Asegúrate de que esta columna exista en la tabla productos
+      p.nombre AS producto,
       m.cantidad,
-      u.nombre AS empleado, -- Asegúrate de que esta columna exista en la tabla usuarios
+      u.nombre AS empleado,
       m.fecha_movimiento
     FROM movimientosinventario m
     LEFT JOIN productos p ON m.id_producto = p.id_producto
@@ -1702,10 +1681,10 @@ app.get("/api/movimientos", (req, res) => {
 
   db.query(sql, (err, result) => {
     if (err) {
-      console.error("❌ Error al obtener movimientos:", err); // Log de error
+      console.error("❌ Error al obtener movimientos:", err);
       return res.status(500).json({ success: false, error: err });
     }
-    console.log("📋 Movimientos obtenidos desde la BD:", result); // Log de datos
+    console.log("📋 Movimientos obtenidos desde la BD:", result);
     res.json({ success: true, movimientos: result });
   });
 });
@@ -1757,7 +1736,6 @@ app.post("/api/movimientos", (req, res) => {
     let cantidadImpacto =
       tipo_movimiento.toLowerCase() === "entrada" ? cantidad : -cantidad;
 
-    // Validar si la salida supera el nivel actual
     if (
       tipo_movimiento.toLowerCase() === "salida" &&
       stock_actual + cantidadImpacto < 0
@@ -1768,7 +1746,6 @@ app.post("/api/movimientos", (req, res) => {
       });
     }
 
-    // Insertar movimiento
     db.query(
       sqlInsert,
       [
@@ -1786,7 +1763,6 @@ app.post("/api/movimientos", (req, res) => {
             .json({ success: false, message: "Error en la base de datos." });
         }
 
-        // Actualizar stock_actual
         db.query(
           sqlUpdateStock,
           [cantidadImpacto, id_producto],
@@ -1799,7 +1775,6 @@ app.post("/api/movimientos", (req, res) => {
               });
             }
 
-            // Verificar si el nivel actual llegó a 0 o al nivel mínimo
             db.query(
               sqlCheckStock,
               [id_producto],
@@ -1892,7 +1867,6 @@ app.put("/api/movimientos/:id", (req, res) => {
     const cantidadImpacto =
       tipo_movimiento.toLowerCase() === "entrada" ? cantidad : -cantidad;
 
-    // Revertir impacto del movimiento anterior
     db.query(
       sqlUpdateStock,
       [cantidadRevertir, movimientoAnterior.id_producto],
@@ -1904,7 +1878,6 @@ app.put("/api/movimientos/:id", (req, res) => {
             .json({ success: false, message: "Error al revertir stock." });
         }
 
-        // Actualizar movimiento con los nuevos valores
         db.query(
           sqlUpdateMovimiento,
           [
@@ -1924,7 +1897,6 @@ app.put("/api/movimientos/:id", (req, res) => {
               });
             }
 
-            // Aplicar impacto del nuevo movimiento
             db.query(
               sqlUpdateStock,
               [cantidadImpacto, id_producto],
@@ -1982,7 +1954,6 @@ app.delete("/api/movimientos/:id", (req, res) => {
         ? -movimiento.cantidad
         : movimiento.cantidad;
 
-    // Revertir impacto del movimiento
     db.query(
       sqlUpdateStock,
       [cantidadRevertir, movimiento.id_producto],
@@ -1994,7 +1965,6 @@ app.delete("/api/movimientos/:id", (req, res) => {
             .json({ success: false, message: "Error al revertir stock." });
         }
 
-        // Eliminar movimiento
         db.query(sqlDeleteMovimiento, [id], (errDelete) => {
           if (errDelete) {
             console.error("❌ Error al eliminar movimiento:", errDelete);
