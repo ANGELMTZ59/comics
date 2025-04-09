@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api"; // Cambia esto si usas otro backend
+const API_URL = "https://fastapi-my17.onrender.com/api"; // updated URL
 
 // Función para iniciar sesión
 export const login = async (email, password) => {

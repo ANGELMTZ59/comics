@@ -12,6 +12,9 @@ import { useNavigate } from "react-router-dom";
 import "../promociones.css";
 import Sidebar from "./sidebar";
 
+// Define la base URL de FastAPI
+const API_URL = "https://fastapi-my17.onrender.com/api";
+
 const Promociones = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,14 +34,10 @@ const Promociones = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resProductos = await axios.get(
-          "http://localhost:5000/api/productos"
-        );
-        const resPromociones = await axios.get(
-          "http://localhost:5000/api/promociones"
-        );
-        setProductos(resProductos.data.productos);
-        setPromociones(resPromociones.data.promociones);
+        const resProductos = await axios.get(`${API_URL}/productos`);
+        const resPromociones = await axios.get(`${API_URL}/promociones`);
+        setProductos(resProductos.data.productos || resProductos.data);
+        setPromociones(resPromociones.data.promociones || resPromociones.data);
       } catch (err) {
         console.error("❌ Error al cargar datos:", err);
       }
@@ -79,31 +78,27 @@ const Promociones = () => {
 
     try {
       if (editingPromocion) {
-        // Si estamos editando, hacer PUT
+        // Editar promoción
         const response = await axios.put(
-          `http://localhost:5000/api/promociones/${editingPromocion.id_promocion}`, // Usa el ID de la promoción desde editingPromocion
+          `${API_URL}/promociones/${editingPromocion.id_promocion}`,
           promocionForm
         );
         if (response.data.success) {
           alert("✅ Promoción actualizada correctamente");
         }
       } else {
-        // Si estamos agregando, hacer POST
+        // Agregar promoción
         const response = await axios.post(
-          "http://localhost:5000/api/promociones",
+          `${API_URL}/promociones`,
           promocionForm
         );
         if (response.data.success) {
           alert("✅ Promoción agregada correctamente");
         }
       }
-
       setModalVisible(false);
-      // Refrescar las promociones después de agregar o editar
-      const resPromociones = await axios.get(
-        "http://localhost:5000/api/promociones"
-      );
-      setPromociones(resPromociones.data.promociones);
+      const resPromociones = await axios.get(`${API_URL}/promociones`);
+      setPromociones(resPromociones.data.promociones || resPromociones.data);
     } catch (error) {
       console.error("❌ Error al guardar promoción:", error);
       alert("Error al guardar la promoción.");
@@ -121,17 +116,14 @@ const Promociones = () => {
 
     if (window.confirm("¿Seguro que deseas eliminar esta promoción?")) {
       try {
-        const response = await axios.delete(
-          `http://localhost:5000/api/promociones/${id}`
-        );
+        const response = await axios.delete(`${API_URL}/promociones/${id}`);
 
         if (response.data.success) {
           alert("✅ Promoción eliminada correctamente");
-          // Refrescar las promociones
-          const resPromociones = await axios.get(
-            "http://localhost:5000/api/promociones"
+          const resPromociones = await axios.get(`${API_URL}/promociones`);
+          setPromociones(
+            resPromociones.data.promociones || resPromociones.data
           );
-          setPromociones(resPromociones.data.promociones);
         }
       } catch (error) {
         console.error("❌ Error al eliminar la promoción:", error);

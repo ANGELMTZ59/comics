@@ -30,7 +30,7 @@ const GestionProveedores = () => {
   // ✅ Conexión real con base de datos
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/proveedores")
+      .get("https://fastapi-my17.onrender.com/api/proveedores")
       .then((res) => {
         if (res.data.success) {
           setProveedores(res.data.proveedores);
@@ -55,7 +55,10 @@ const GestionProveedores = () => {
     };
 
     axios
-      .post("http://localhost:5000/api/proveedores", proveedorConFecha)
+      .post(
+        "https://fastapi-my17.onrender.com/api/proveedores",
+        proveedorConFecha
+      )
       .then((res) => {
         if (res.data.success) {
           alert("Proveedor agregado correctamente.");
@@ -92,7 +95,7 @@ const GestionProveedores = () => {
 
     axios
       .put(
-        `http://localhost:5000/api/proveedores/${proveedorSeleccionado.id_proveedor}`,
+        `https://fastapi-my17.onrender.com/api/proveedores/${proveedorSeleccionado.id_proveedor}`,
         proveedorConFecha
       )
       .then((res) => {
@@ -123,7 +126,7 @@ const GestionProveedores = () => {
   const eliminarProveedor = (id) => {
     if (window.confirm("¿Seguro que deseas eliminar este proveedor?")) {
       axios
-        .delete(`http://localhost:5000/api/proveedores/${id}`)
+        .delete(`https://fastapi-my17.onrender.com/api/proveedores/${id}`)
         .then((res) => {
           if (res.data.success) {
             alert("Proveedor eliminado correctamente.");

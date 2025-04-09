@@ -33,7 +33,7 @@ const Notificaciones = () => {
     const fetchNotificaciones = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/notificaciones"
+          "https://fastapi-my17.onrender.com/api/notificaciones"
         );
         if (response.data.success) {
           setNotificaciones(response.data.notificaciones);
@@ -55,7 +55,7 @@ const Notificaciones = () => {
       try {
         // Obtener clientes
         const clientesResponse = await axios.get(
-          "http://localhost:5000/api/clientes"
+          "https://fastapi-my17.onrender.com/api/clientes"
         );
         if (clientesResponse.data.success) {
           setClientes(clientesResponse.data.clientes);
@@ -63,7 +63,7 @@ const Notificaciones = () => {
 
         // Obtener promociones
         const promocionesResponse = await axios.get(
-          "http://localhost:5000/api/promociones"
+          "https://fastapi-my17.onrender.com/api/promociones"
         );
         if (promocionesResponse.data.success) {
           setPromociones(promocionesResponse.data.promociones);
@@ -99,7 +99,7 @@ const Notificaciones = () => {
     try {
       console.log("📤 Enviando datos al backend:", notificacionForm); // Log para depuración
       const response = await axios.post(
-        "http://localhost:5000/api/notificaciones",
+        "https://fastapi-my17.onrender.com/api/notificaciones",
         {
           ...notificacionForm,
           fecha_envio: new Date().toISOString().split("T")[0],
@@ -124,7 +124,7 @@ const Notificaciones = () => {
   const marcarComoLeida = async (id) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/notificaciones/${id}/leida`
+        `https://fastapi-my17.onrender.com/api/notificaciones/${id}/leida`
       );
 
       if (response.data.success) {
@@ -148,7 +148,7 @@ const Notificaciones = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:5000/api/notificaciones/${id}`
+        `https://fastapi-my17.onrender.com/api/notificaciones/${id}`
       );
 
       if (response.data.success) {

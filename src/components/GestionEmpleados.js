@@ -20,7 +20,7 @@ import {
 } from "react-icons/fa";
 import "../styles.css"; // Importa el archivo CSS consolidado
 
-const API_URL = "http://localhost:5000/api"; // Ajusta si es necesario
+const API_URL = "https://fastapi-my17.onrender.com/api"; // updated URL
 
 const GestionEmpleados = ({ empleado }) => {
   const navigate = useNavigate();

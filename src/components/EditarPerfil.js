@@ -47,7 +47,7 @@ const EditarPerfil = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/clientes/${cliente.id_cliente}`,
+        `https://fastapi-my17.onrender.com/api/clientes/${cliente.id_cliente}`,
         formData
       );
 

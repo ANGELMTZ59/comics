@@ -5,7 +5,7 @@ import Sidebar from "./sidebar.js";
 import axios from "axios";
 import "../styles.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://fastapi-my17.onrender.com/api";
 
 const InicioEmpleado = ({ setEmpleado }) => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const InicioEmpleado = ({ setEmpleado }) => {
         };
 
         const response = await axios.get(
-          "http://localhost:5000/api/empleado",
+          "https://fastapi-my17.onrender.com/api/empleado",
           config
         );
 

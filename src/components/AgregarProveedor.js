@@ -24,7 +24,7 @@ const AgregarProveedor = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch("http://localhost:5000/proveedores", {
+    fetch("https://fastapi-my17.onrender.com/api/proveedores", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

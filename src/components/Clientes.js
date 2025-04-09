@@ -33,7 +33,9 @@ const Clientes = () => {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/clientes");
+        const response = await axios.get(
+          "https://fastapi-my17.onrender.com/api/clientes"
+        );
         if (response.data.success && Array.isArray(response.data.clientes)) {
           setClientes(response.data.clientes);
         } else {
@@ -51,7 +53,9 @@ const Clientes = () => {
   // Add a refresh function to reload the client list
   const refreshClientes = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/clientes");
+      const response = await axios.get(
+        "https://fastapi-my17.onrender.com/api/clientes"
+      );
       if (response.data.success) {
         setClientes(response.data.clientes); // ✅ Aquí está el arreglo correcto
       } else {
@@ -123,7 +127,7 @@ const Clientes = () => {
       if (editingClient) {
         // Editar cliente
         const response = await axios.put(
-          `http://localhost:5000/api/clientes/${editingClient.id_cliente}`,
+          `https://fastapi-my17.onrender.com/api/clientes/${editingClient.id_cliente}`,
           clienteForm
         );
         if (response.data.success) {
@@ -135,7 +139,7 @@ const Clientes = () => {
       } else {
         // Agregar cliente
         const response = await axios.post(
-          "http://localhost:5000/api/clientes",
+          "https://fastapi-my17.onrender.com/api/clientes",
           clienteForm
         );
         if (response.data.success) {
@@ -176,7 +180,7 @@ const Clientes = () => {
     try {
       // Realiza la solicitud PUT
       const response = await axios.put(
-        `http://localhost:5000/api/clientes/${clienteEditado.id_cliente}`,
+        `https://fastapi-my17.onrender.com/api/clientes/${clienteEditado.id_cliente}`,
         clienteEditado
       );
       // Si la solicitud es exitosa
@@ -199,7 +203,7 @@ const Clientes = () => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
       try {
         const response = await axios.delete(
-          `http://localhost:5000/api/clientes/${id_cliente}`
+          `https://fastapi-my17.onrender.com/api/clientes/${id_cliente}`
         );
         if (response.data.success) {
           alert("✅ Cliente eliminado correctamente");

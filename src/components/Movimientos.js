@@ -4,7 +4,7 @@ import Sidebar from "./sidebar"; // ✅ Se importa el Sidebar
 import axios from "axios"; // Asegúrate de importar axios para hacer las peticiones
 import "../styles.css";
 
-const API_URL = "http://localhost:5000/api"; // Cambia esto si es necesario
+const API_URL = "https://fastapi-my17.onrender.com/api"; // updated URL
 
 const Movimientos = () => {
   const [modalOpen, setModalOpen] = useState(false);

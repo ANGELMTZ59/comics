@@ -10,7 +10,7 @@ import {
 import Sidebar from "./sidebar";
 import "../ordenesCompra.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://fastapi-my17.onrender.com/api"; // updated URL
 
 const OrdenesCompra = () => {
   const [ordenes, setOrdenes] = useState([]);

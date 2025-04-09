@@ -17,10 +17,13 @@ const Login = () => {
         return;
       }
 
-      const response = await axios.post("http://localhost:5000/api/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "https://fastapi-my17.onrender.com/api/login",
+        {
+          email,
+          password,
+        }
+      );
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);

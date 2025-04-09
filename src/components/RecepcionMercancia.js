@@ -4,7 +4,7 @@ import axios from "axios";
 import Sidebar from "./sidebar";
 import "../mercancia.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://fastapi-my17.onrender.com/api"; // updated URL
 
 const RecepcionMercancia = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
