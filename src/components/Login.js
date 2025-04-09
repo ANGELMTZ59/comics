@@ -10,13 +10,12 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    try {
-      // Verificar que los campos no estén vacíos antes de enviar la solicitud
-      if (!email || !password) {
-        alert("Por favor, complete todos los campos.");
-        return;
-      }
+    if (!email || !password) {
+      alert("Por favor, complete todos los campos.");
+      return;
+    }
 
+    try {
       const response = await axios.post(
         "https://fastapi-my17.onrender.com/api/login",
         {
@@ -50,14 +49,18 @@ const Login = () => {
         alert("❌ Usuario o contraseña incorrectos");
       }
     } catch (error) {
-      console.error("❌ Error al iniciar sesión:", error);
-
-      // Mostrar un mensaje de error más claro al usuario
-      if (error.response && error.response.status === 400) {
-        alert("Usuario o contraseña incorrectos. Por favor, intente de nuevo.");
-      } else {
-        alert("Error al iniciar sesión. Por favor, intente más tarde.");
+      console.error(
+        "❌ Error al iniciar sesión:",
+        error.response?.data || error
+      );
+      const detail = error.response?.data?.detail;
+      let errorMsg = "Error al iniciar sesión. Por favor, intente más tarde.";
+      if (Array.isArray(detail)) {
+        errorMsg = detail.join("; ");
+      } else if (typeof detail === "string") {
+        errorMsg = detail;
       }
+      alert("Error: " + errorMsg);
     }
   };
 
