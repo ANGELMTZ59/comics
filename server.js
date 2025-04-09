@@ -96,7 +96,6 @@ app.get("/api/puestos", (req, res) => {
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
-  // Validar que los campos requeridos estén presentes
   if (!email || !password) {
     return res
       .status(400)
@@ -110,51 +109,58 @@ app.post("/api/login", (req, res) => {
   `;
 
   db.query(sql, [email], async (err, results) => {
-    if (err) {
-      console.error("❌ Error al consultar el usuario:", err);
-      return res
-        .status(500)
-        .json({ success: false, message: "Error en el servidor" });
-    }
+    try {
+      if (err) {
+        console.error("❌ Error al consultar el usuario:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Error en el servidor" });
+      }
 
-    if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Usuario no encontrado" });
-    }
+      if (results.length === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Usuario no encontrado" });
+      }
 
-    const usuario = results[0];
+      const usuario = results[0];
+      // Asumir activo como booleano; si no es verdadero, se rechaza el acceso.
+      if (!usuario.activo) {
+        return res.status(403).json({
+          success: false,
+          message: "Usuario desactivado. No puede iniciar sesión.",
+        });
+      }
 
-    if (usuario.activo === "no") {
-      return res.status(403).json({
-        success: false,
-        message: "Usuario desactivado. No puede iniciar sesión.",
+      const match = await bcrypt.compare(password, usuario.contraseña);
+      if (!match) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Contraseña incorrecta" });
+      }
+
+      const token = jwt.sign(
+        { id_usuario: usuario.id_usuario, id_rol: usuario.id_rol },
+        SECRET_KEY,
+        { expiresIn: "1h" }
+      );
+
+      res.json({
+        success: true,
+        token,
+        usuario: {
+          id_usuario: usuario.id_usuario,
+          nombre: usuario.nombre,
+          email: usuario.email,
+          id_rol: usuario.id_rol,
+        },
       });
+    } catch (error) {
+      console.error("❌ Error inesperado en login:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Error interno en el servidor" });
     }
-
-    const match = await bcrypt.compare(password, usuario.contraseña);
-    if (!match) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Contraseña incorrecta" });
-    }
-
-    const token = jwt.sign(
-      { id_usuario: usuario.id_usuario, id_rol: usuario.id_rol },
-      SECRET_KEY,
-      { expiresIn: "1h" }
-    );
-
-    res.json({
-      success: true,
-      token,
-      usuario: {
-        id_usuario: usuario.id_usuario,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        id_rol: usuario.id_rol,
-      },
-    });
   });
 });
 
