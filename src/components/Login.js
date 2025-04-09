@@ -15,11 +15,19 @@ const Login = () => {
       return;
     }
 
+    const payload = { email, password };
+    console.log("Enviando payload:", JSON.stringify(payload)); // Verifica el contenido
+
     try {
-      // Enviar campos con los nombres que espera el backend
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
       const response = await axios.post(
         "https://fastapi-my17.onrender.com/api/login",
-        { email, password } // Usa las claves "email" y "password"
+        payload,
+        config
       );
 
       if (response.data.success) {
