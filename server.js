@@ -15,12 +15,13 @@ app.use(cors());
 // ✅ Clave para JWT (usar variable de entorno o un valor predeterminado)
 const SECRET_KEY = process.env.JWT_SECRET || "tu_secreto"; // Asegúrate de que JWT_SECRET esté definido en el archivo .env
 
-// 📌 Configurar conexión a MySQL
+// 📌 Configurar conexión a MySQL usando variables de entorno
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "Master12$",
-  database: "comicstore",
+  host: process.env.DB_HOST, // nozomi.proxy.rlwy.net
+  port: process.env.DB_PORT, // 42598
+  user: process.env.DB_USERNAME, // root
+  password: process.env.DB_PASSWORD, // GZTnIwtXCWSzkWusVmMdvBQyytEfOibP
+  database: process.env.DB_DATABASE, // comicstore
 });
 
 db.connect((err) => {
@@ -274,9 +275,7 @@ app.post("/api/client-login", (req, res) => {
 
     const match = await bcrypt.compare(password, cliente.contraseña);
     if (!match) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Contraseña incorrecta" });
+      return res.status(400);
     }
 
     const token = jwt.sign({ id_cliente: cliente.id_cliente }, SECRET_KEY, {
