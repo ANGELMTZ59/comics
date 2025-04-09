@@ -1370,7 +1370,7 @@ app.get("/api/recepciones", (req, res) => {
   } = req.query;
 
   let sql = `
-    SELECT r.id_recepcion,
+    SELECT r.id_recepcion
     FROM recepcionesmercancia r
     JOIN proveedores pr ON r.id_proveedor = pr.id_proveedor
     WHERE 1=1

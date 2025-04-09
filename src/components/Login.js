@@ -16,12 +16,10 @@ const Login = () => {
     }
 
     try {
+      // Cambia los nombres de los campos según lo que espera el backend FastAPI.
       const response = await axios.post(
         "https://fastapi-my17.onrender.com/api/login",
-        {
-          email,
-          password,
-        }
+        { correo: email, contrasena: password } // Actualiza las claves según sea necesario
       );
 
       if (response.data.success) {
@@ -53,10 +51,12 @@ const Login = () => {
         "❌ Error al iniciar sesión:",
         error.response?.data || error
       );
+      // Agrega log para ver el detalle
+      console.log("Detalle del error:", error.response?.data?.detail);
       const detail = error.response?.data?.detail;
       let errorMsg = "Error al iniciar sesión. Por favor, intente más tarde.";
       if (Array.isArray(detail)) {
-        errorMsg = detail.join("; ");
+        errorMsg = detail.join("\n"); // Unir los mensajes en líneas separadas
       } else if (typeof detail === "string") {
         errorMsg = detail;
       }
