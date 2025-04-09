@@ -17,12 +17,12 @@ const SECRET_KEY = process.env.JWT_SECRET || "tu_secreto"; // Asegúrate de que 
 
 // 📌 Configurar conexión a MySQL usando variables de entorno con valores por defecto
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || "nozomi.proxy.rlwy.net", // updated URL as string
-  port: process.env.DB_PORT || 42598,
-  user: process.env.DB_USERNAME || "root",
-  password: process.env.DB_PASSWORD || "GZTnIwtXCWSzkWusVmMdvBQyytEfOibP",
-  database: process.env.DB_DATABASE || "comicstore",
-  connection: process.env.DB_CONNECTION || "mysql",
+  host: process.env.DB_HOST, // updated URL as string
+  port: process.env.DB_PORT,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  connection: process.env.DB_CONNECTION,
 });
 
 db.connect((err) => {
