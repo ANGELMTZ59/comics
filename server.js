@@ -1997,5 +1997,6 @@ app.use((err, req, res, next) => {
 /* ------------------------------------- */
 /* 🔹 INICIAR SERVIDOR                  */
 /* ------------------------------------- */
-const PORT = 5000;
+// Iniciar el servidor usando process.env.PORT si existe
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🔥 Servidor en http://localhost:${PORT}`));

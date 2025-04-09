@@ -31,7 +31,7 @@ const InicioEmpleado = ({ setEmpleado }) => {
         };
 
         const response = await axios.get(
-          "https://fastapi-my17.onrender.com/api/empleado",
+          "http://localhost:5000/api/empleado",
           config
         );
 
